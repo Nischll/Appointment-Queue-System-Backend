@@ -1,0 +1,7 @@
+CREATE TABLE doctors (
+  id SERIAL PRIMARY KEY,
+  full_name VARCHAR(100) NOT NULL,
+  specialization VARCHAR(100),
+  room_number VARCHAR(20),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
