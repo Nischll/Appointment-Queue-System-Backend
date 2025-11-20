@@ -13,3 +13,4 @@ const runSqlFile = async (filePath) => {
 };
 
 await runSqlFile("./src/models/users.sql");
+await runSqlFile("./src/models/clinics.sql");
