@@ -25,7 +25,7 @@ export const login = async (req, res) => {
   }
 };
 
-export const logout = (req,res) => {
+export const logout = (req, res) => {
   try {
     return sendResponse(res, 200, "Succesfully logged out", null);
   } catch (error) {
@@ -45,6 +45,7 @@ export const refreshToken = async (req, res) => {
     const payload = {
       id: decoded.id,
       email: decoded.email,
+      role: decoded.role,
     };
 
     const newAccessToken = generateAccessToken(payload);

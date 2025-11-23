@@ -5,12 +5,13 @@ import {
   refreshToken,
   signup,
 } from "../controllers/authController.js";
+import { authenticate } from "../middleware/auth.js";
 
 const router = express.Router();
 
 router.post("/signup", signup);
 router.post("/login", login);
-router.post("/logout", logout);
-router.post("/refresh", refreshToken);
+router.post("/logout", authenticate, logout);
+router.post("/refresh", authenticate, refreshToken);
 
 export default router;
