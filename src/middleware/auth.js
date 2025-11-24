@@ -5,7 +5,7 @@ export const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return sendResponse(res, 401, "Unauthorized", null);
+    return sendResponse(res, 403, "Unauthorized", null);
   }
 
   const token = authHeader.split(" ")[1];
