@@ -1,7 +1,11 @@
 import express from "express";
 import { authenticate } from "../middleware/auth.js";
 import { authorizeModule } from "../middleware/authorizeModule.js";
-import { createRole } from "../controllers/roleController.js";
+import {
+  createRole,
+  getRoles,
+  updateRole,
+} from "../controllers/roleController.js";
 import {
   getRolePermissions,
   updateRolePermissions,
@@ -10,6 +14,8 @@ import {
 const router = express.Router();
 
 router.post("/", authenticate, authorizeModule("RM", "create"), createRole);
+router.get("/", authenticate, authorizeModule("RM", "read"), getRoles);
+router.put("/:id", authenticate, authorizeModule("RM", "update"), updateRole);
 
 // Permissions Route
 router.get(

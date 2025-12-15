@@ -11,3 +11,26 @@ export const createRoleQuery = async (roleData) => {
 
   return result.rows[0];
 };
+
+export const getAllRolesQuery = async () => {
+  const result = await pool.query(
+    `Select id, role_name, code, description FROM roles ORDER BY id ASC `
+  );
+  return result.rows;
+};
+
+export const updateRoleQuery = async (roleId, roleData) => {
+  const { role_name, code, description } = roleData;
+
+  const result = await pool.query(
+    `UPDATE roles
+      SET role_name = $1,
+          code = $2,
+          description = $3
+        where id = $4
+        RETURNING *`,
+    [role_name, code, description, roleId]
+  );
+
+  return result.rows[0];
+};

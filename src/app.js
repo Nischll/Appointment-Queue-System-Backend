@@ -21,9 +21,9 @@ initDb().catch((err) => {
 });
 
 app.use("/api/auth", authRoutes);
-app.use("/api/clinics", clinicRoutes);
 app.use("/api/init", initRoutes);
 app.use("/api/role", roleRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/clinics", clinicRoutes);
 
 export default app;
