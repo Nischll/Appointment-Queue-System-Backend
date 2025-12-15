@@ -1,8 +1,0 @@
-CREATE TABLE IF NOT EXISTS patients (
-  id SERIAL PRIMARY KEY,
-  full_name VARCHAR(100) NOT NULL,
-  age INT,
-  gender VARCHAR(10),
-  phone VARCHAR(20),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
