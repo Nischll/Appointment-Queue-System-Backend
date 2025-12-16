@@ -1,5 +1,0 @@
-CREATE TABLE IF NOT EXISTS permissions (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(100) UNIQUE NOT NULL,
-  description VARCHAR(255)
-);

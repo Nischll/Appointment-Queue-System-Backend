@@ -32,6 +32,16 @@ const modules = [
     icon: "User",
     path: "/role-management",
   },
+  {
+    id: 7,
+    parent_id: 1,
+    orders: 3,
+    name: "Clinic Management",
+    code: "CM",
+    description: "Manage all the clinics.",
+    icon: "User",
+    path: "/clinic-management",
+  },
 
   //Dashboard
   {
@@ -46,26 +56,26 @@ const modules = [
   },
 
   //Reports
-  {
-    id: 5,
-    parent_id: null,
-    orders: 3,
-    name: "Reports",
-    code: "R",
-    description: "Manage all the reports.",
-    icon: "User",
-    path: "/reports",
-  },
-  {
-    id: 6,
-    parent_id: null,
-    orders: 4,
-    name: "Configuarations",
-    code: "C",
-    description: "Manage all the configuarations.",
-    icon: "User",
-    path: "/configuarations",
-  },
+  // {
+  //   id: 5,
+  //   parent_id: null,
+  //   orders: 3,
+  //   name: "Reports",
+  //   code: "R",
+  //   description: "Manage all the reports.",
+  //   icon: "User",
+  //   path: "/reports",
+  // },
+  // {
+  //   id: 6,
+  //   parent_id: null,
+  //   orders: 4,
+  //   name: "Configuarations",
+  //   code: "C",
+  //   description: "Manage all the configuarations.",
+  //   icon: "User",
+  //   path: "/configuarations",
+  // },
 ];
 
 const seedModules = async () => {

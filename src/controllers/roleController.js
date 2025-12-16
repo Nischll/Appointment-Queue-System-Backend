@@ -26,13 +26,10 @@ export const createRole = async (req, res) => {
 export const getRoles = async (req, res) => {
   try {
     const roles = await getAllRoleService();
-    res.json({
-      status: 200,
-      message: "Roles fetched successfully",
-      data: roles,
-    });
+    return sendResponse(res, 200, "Successfully retrieved roles", roles);
   } catch (err) {
-    res.status(500).json({ status: 500, message: err.message });
+    console.error("error getting roles", err);
+    return sendResponse(res, 500, err.message, null);
   }
 };
 
@@ -50,7 +47,6 @@ export const updateRole = async (req, res) => {
 
     return sendResponse(res, 200, "Role updated successfully.", data.roleId);
   } catch (err) {
-    console.log(req.body);
     return sendResponse(res, 500, err.message, null);
   }
 };
