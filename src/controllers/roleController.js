@@ -45,8 +45,9 @@ export const updateRole = async (req, res) => {
 
     const data = await updateRoleService(roleId, roleDto);
 
-    return sendResponse(res, 200, "Role updated successfully.", data.roleId);
+    return sendResponse(res, 200, "Role updated successfully.", data);
   } catch (err) {
+    console.error("error updating role", err);
     return sendResponse(res, 500, err.message, null);
   }
 };

@@ -32,5 +32,5 @@ export const updateRoleQuery = async (roleId, roleData) => {
     [role_name, code, description, roleId]
   );
 
-  return result.rows[0];
+  return result.rows[0].id;
 };

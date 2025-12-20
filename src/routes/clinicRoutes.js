@@ -1,6 +1,11 @@
 import express from "express";
 import { authenticate } from "../middleware/auth.js";
-import { createClinic, getClinics } from "../controllers/clinicController.js";
+import {
+  createClinic,
+  deleteClinic,
+  getClinics,
+  updateCLinic,
+} from "../controllers/clinicController.js";
 import { authorizeModule } from "../middleware/authorizeModule.js";
 
 const router = express.Router();
@@ -8,9 +13,21 @@ const router = express.Router();
 router.post(
   "/",
   authenticate,
-  authorizeModule("RM", "write", true),
+  authorizeModule("CM", "write", true),
   createClinic
 );
-router.get("/", authenticate, authorizeModule("RM", "read", true), getClinics);
+router.get("/", authenticate, authorizeModule("CM", "read", true), getClinics);
+router.put(
+  "/:id",
+  authenticate,
+  authorizeModule("CM", "update", true),
+  updateCLinic
+);
+router.delete(
+  "/:id",
+  authenticate,
+  authorizeModule("CM", "delete", true),
+  deleteClinic
+);
 
 export default router;

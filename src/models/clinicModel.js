@@ -25,3 +25,30 @@ export const getAllClinicQuery = async () => {
 
   return result.rows;
 };
+
+export const updateClinicQuery = async (clinicId, clinicData) => {
+  const { name, address, contact } = clinicData;
+
+  const result = await pool.query(
+    `UPDATE clinics
+      SET name = $1,
+          address = $2,
+          contact = $3
+        WHERE id = $4
+        RETURNING *`,
+    [name, address, contact, clinicId]
+  );
+
+  return result.rows[0].id;
+};
+
+export const deleteClinicQuery = async (clinicId) => {
+  const result = await pool.query(
+    `DELETE FROM clinics 
+      WHERE id = $1
+      RETURNING id`,
+    [clinicId]
+  );
+
+  return result.rows[0].id;
+};
