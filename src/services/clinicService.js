@@ -32,7 +32,7 @@ export const updateClinicService = async (clinicId, clinicDto) => {
 export const deleteClinicService = async (clinicId) => {
   const deletedClinic = await deleteClinicQuery(clinicId);
 
-  if (!deletedClinic || !clinicId) {
+  if (!deletedClinic) {
     throw new Error("Clinic not foound");
   }
 

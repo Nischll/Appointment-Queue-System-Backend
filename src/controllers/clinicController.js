@@ -13,6 +13,7 @@ export const createClinic = async (req, res) => {
     const data = await createClinicService(dto);
     return sendResponse(res, 200, "Clinic added successfully", data);
   } catch (error) {
+    console.error("error posting clinics", error);
     return sendResponse(res, 400, error.message, null);
   }
 };
@@ -27,7 +28,7 @@ export const getClinics = async (req, res) => {
   }
 };
 
-export const updateCLinic = async (req, res) => {
+export const updateClinic = async (req, res) => {
   try {
     const clinicId = req.params.id;
     const clinicDto = new ClinicDto(req.body);

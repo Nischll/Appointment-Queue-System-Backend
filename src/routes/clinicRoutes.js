@@ -4,7 +4,7 @@ import {
   createClinic,
   deleteClinic,
   getClinics,
-  updateCLinic,
+  updateClinic,
 } from "../controllers/clinicController.js";
 import { authorizeModule } from "../middleware/authorizeModule.js";
 
@@ -21,7 +21,7 @@ router.put(
   "/:id",
   authenticate,
   authorizeModule("CM", "update", true),
-  updateCLinic
+  updateClinic
 );
 router.delete(
   "/:id",

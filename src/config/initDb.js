@@ -19,7 +19,7 @@ const runSqlFile = async (filePath) => {
 // await runSqlFile("./src/models/modules.sql");
 const runSqlFiles = async () => {
   try {
-    const modelsDir = path.join(process.cwd(), "src", "models");
+    const modelsDir = path.join(process.cwd(), "src", "tables");
     const files = fs.readdirSync(modelsDir).filter((f) => f.endsWith(".sql"));
 
     const order = [
