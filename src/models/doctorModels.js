@@ -51,11 +51,9 @@ export const getDoctorByClinicQuery = async (clinicId) => {
       d.specialization,
       d.phone,
       d.email,
-      d.status AS doctor_status,
       
       c.id AS clinic_id,
-      c.name AS clinic_name,
-      dc.status AS doctor_clinic_status
+      c.name AS clinic_name
     FROM doctor_clinics dc
     JOIN doctors d ON d.id = dc.doctor_id
     JOIN clinics c ON c.id = dc.clinic_id
@@ -68,4 +66,35 @@ export const getDoctorByClinicQuery = async (clinicId) => {
   );
 
   return result.rows;
+};
+
+export const updateDoctorQuery = async (doctorId, data) => {
+  const { name, specialization, phone, email } = data;
+  const result = await pool.query(
+    `UPDATE doctors
+     SET 
+        name = COALESCE($1, name),
+        specialization = COALESCE($2, specialization),
+        phone = COALESCE($3, phone),
+        email = COALESCE($4, email)
+      WHERE id = $5
+      RETURNING *`,
+    [name, specialization, phone, email, doctorId]
+  );
+
+  return result.rows[0] || null;
+};
+
+export const deleteDoctorQuery = async (doctorId, clinicId) => {
+  const result = await pool.query(
+    `UPDATE doctor_clinics
+     Set
+      status = FALSE
+      WHERE
+        doctor_id = $1 AND clinic_id = $2 AND status = TRUE
+        RETURNING doctor_id`,
+    [doctorId, clinicId]
+  );
+
+  return result.rows[0] || null
 };
