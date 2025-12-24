@@ -10,6 +10,7 @@ import initRoutes from "./routes/initRoutes.js";
 import roleRoutes from "./routes/roleRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import doctorRoutes from "./routes/doctorRoutes.js";
+import doctorShiftRoutes from "./routes/doctorShiftRoutes.js";
 
 dotenv.config();
 
@@ -27,5 +28,6 @@ app.use("/api/role", roleRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/clinics", clinicRoutes);
 app.use("/api/doctor", doctorRoutes);
+app.use("/api/doctor-shifts", doctorShiftRoutes);
 
 export default app;
