@@ -1,4 +1,4 @@
-import { updateDoctorService } from "../services/doctorService";
+import { updateDoctorShiftService } from "../services/doctorShiftService.js";
 import { sendResponse } from "../utils/response.js";
 
 export const updateDoctorShifts = async (req, res) => {
@@ -6,7 +6,7 @@ export const updateDoctorShifts = async (req, res) => {
     const { doctorId, clinicId } = req.params;
     const { shifts } = req.body;
 
-    await updateDoctorService(doctorId, clinicId, shifts);
+    await updateDoctorShiftService(doctorId, clinicId, shifts);
     return sendResponse(res, 200, "Doctor shifts updated successfully", null);
   } catch (error) {
     console.log("error updating shifts", error);
