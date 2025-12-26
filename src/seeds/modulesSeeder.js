@@ -1,6 +1,18 @@
 import pool from "../config/db.js";
 
 const modules = [
+  //Dashboard
+  {
+    id: 4,
+    parent_id: null,
+    orders: 1,
+    name: "Dashboard",
+    code: "D",
+    description: "Dashboard",
+    icon: "LayoutGrid",
+    path: "/home",
+  },
+
   //User Management
   {
     id: 1,
@@ -42,18 +54,17 @@ const modules = [
     icon: "User",
     path: "/clinic-management",
   },
-
-  //Dashboard
   {
-    id: 4,
-    parent_id: null,
-    orders: 1,
-    name: "Dashboard",
-    code: "D",
-    description: "Dashboard",
-    icon: "LayoutGrid",
-    path: "/home",
+    id: 8,
+    parent_id: 1,
+    orders: 4,
+    name: "Doctor Management",
+    code: "DM",
+    description: "Manage all the doctors.",
+    icon: "User",
+    path: "/doctor-management",
   },
+
 
   //Reports
   // {

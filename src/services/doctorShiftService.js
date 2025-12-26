@@ -2,6 +2,7 @@ import pool from "../config/db.js";
 import {
   checkDoctorShiftOverlapQuery,
   deleteDoctorShiftsQuery,
+  getDoctorShiftsQuery,
   insertDoctorShiftsQuery,
 } from "../models/doctorShiftModels.js";
 
@@ -56,4 +57,12 @@ export const updateDoctorShiftService = async (doctorId, clinicId, shifts) => {
   } finally {
     client.release();
   }
+};
+
+export const getDoctorShiftsService = async (doctorId, clinicId) => {
+  if (!doctorId || !clinicId) {
+    throw new Error("Doctor and Clinic are required");
+  }
+
+  return await getDoctorShiftsQuery(doctorId, clinicId);
 };

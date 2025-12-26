@@ -1,3 +1,5 @@
+import pool from "../config/db.js";
+
 export const checkDoctorShiftOverlapQuery = async (
   client,
   doctorId,
@@ -57,4 +59,24 @@ export const deleteDoctorShiftsQuery = async (client, doctorId, clinicId) => {
      WHERE doctor_id = $1 AND clinic_id = $2`,
     [doctorId, clinicId]
   );
+};
+
+export const getDoctorShiftsQuery = async (doctorId, clinicId) => {
+  const result = await pool.query(
+    `
+      SELECT
+        id,
+        day_of_week,
+        start_time,
+        end_time,
+        is_day_off
+      FROM doctor_shifts
+      where doctor_id = $1
+        and clinic_id = $2
+      ORDER BY day_of_week ASC
+    `,
+    [doctorId, clinicId]
+  );
+
+  return result.rows;
 };
