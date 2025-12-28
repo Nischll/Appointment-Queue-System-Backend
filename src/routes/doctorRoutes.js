@@ -14,7 +14,7 @@ router.post("/", authenticate, authorizeModule("DM", "write"), createDoctor);
 router.get("/", authenticate, authorizeModule("DM", "read"), getDoctors);
 router.put("/:id", authenticate, authorizeModule("DM", "update"), updateDoctor);
 router.delete(
-  "/:doctorId/:clinicId",
+  "/:doctorId/:departmentId",
   authenticate,
   authorizeModule("DM", "delete"),
   deleteDoctor

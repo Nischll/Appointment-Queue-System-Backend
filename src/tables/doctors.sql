@@ -1,7 +1,6 @@
 CREATE TABLE IF NOT EXISTS doctors (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
-  specialization VARCHAR(255),
   phone VARCHAR(20),
   email VARCHAR(255) NOT NULL,
   status BOOLEAN DEFAULT TRUE,

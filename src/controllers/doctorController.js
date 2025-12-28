@@ -1,8 +1,8 @@
 import { DoctorDto } from "../dto/doctorDto.js";
 import {
   createDoctorService,
-  deleteDoctorService,
-  getDoctorByClinicService,
+  getDoctorsByDepartmentService,
+  removeDoctorFromDepartmentService,
   updateDoctorService,
 } from "../services/doctorService.js";
 import { sendResponse } from "../utils/response.js";
@@ -25,8 +25,8 @@ export const createDoctor = async (req, res) => {
 
 export const getDoctors = async (req, res) => {
   try {
-    const clinicId = req.query.clinicId;
-    const data = await getDoctorByClinicService(clinicId);
+    const departmentId = req.query.departmentId;
+    const data = await getDoctorsByDepartmentService(departmentId);
     return sendResponse(res, 200, "Successfully retrieved doctors.", data);
   } catch (error) {
     console.error("error fetching doctors", error);
@@ -59,11 +59,16 @@ export const updateDoctor = async (req, res) => {
 
 export const deleteDoctor = async (req, res) => {
   try {
-    const { doctorId, clinicId } = req.params;
+    const { doctorId, departmentId } = req.params;
 
-    const data = await deleteDoctorService(doctorId, clinicId);
+    const data = await removeDoctorFromDepartmentService(doctorId, departmentId);
 
-    return sendResponse(res, 200, "Doctor removed successfully", data.doctor_id);
+    return sendResponse(
+      res,
+      200,
+      "Doctor removed successfully",
+      data.doctor_id
+    );
   } catch (error) {
     console.error("error removing doctor", error);
     return sendResponse(

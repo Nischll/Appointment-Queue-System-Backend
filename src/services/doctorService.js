@@ -1,34 +1,50 @@
+import pool from "../config/db.js";
+import { DoctorDto } from "../dto/doctorDto.js";
 import {
-  addDoctorClinicQuery,
+  addDoctorToDepartmentsQuery,
   createDoctorQuery,
-  deleteDoctorQuery,
   findDoctorByEmail,
-  getDoctorByClinicQuery,
+  getDoctorsByDepartmentQuery,
+  removeDoctorFromDepartmentQuery,
   updateDoctorQuery,
 } from "../models/doctorModels.js";
 
 export const createDoctorService = async (data) => {
-  if (!data.clinic_id || data.clinic_id.length === 0) {
-    throw new Error("At least one clinic is required.");
+  if (!data.department_id || data.department_id.length === 0) {
+    throw new Error("At least one department is required.");
   }
 
-  let doctor = await findDoctorByEmail(data.email);
+  const client = await pool.connect();
 
-  if (!doctor) {
-    doctor = await createDoctorQuery(data);
+  try {
+    await client.query("BEGIN");
+
+    const dto = new DoctorDto(data);
+
+    let doctor = await findDoctorByEmail(dto.email);
+
+    if (!doctor) {
+      doctor = await createDoctorQuery(dto, client);
+    }
+
+    await addDoctorToDepartmentsQuery(doctor.id, data.department_id, client);
+
+    await client.query("COMMIT");
+    return doctor.id;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
   }
-
-  await addDoctorClinicQuery(doctor.id, data.clinic_id);
-
-  return doctor.id;
 };
 
-export const getDoctorByClinicService = async (clinicId) => {
-  if (!clinicId) {
-    throw new Error("Clinic is required to fetch Doctors");
+export const getDoctorsByDepartmentService = async (departmentId) => {
+  if (!departmentId) {
+    throw new Error("Department is required to fetch Doctors");
   }
 
-  return await getDoctorByClinicQuery(clinicId);
+  return await getDoctorsByDepartmentQuery(departmentId);
 };
 
 export const updateDoctorService = async (doctorId, data) => {
@@ -39,7 +55,7 @@ export const updateDoctorService = async (doctorId, data) => {
   if (data.email) {
     const existingDoctor = await findDoctorByEmail(data.email);
     if (existingDoctor && existingDoctor.id !== Number(doctorId)) {
-      throw new Error("Provided email is belong to other doctor.");
+      throw new Error("Provided email belongs to another doctor.");
     }
   }
 
@@ -52,16 +68,19 @@ export const updateDoctorService = async (doctorId, data) => {
   return updatedDoctor;
 };
 
-export const deleteDoctorService = async (doctorId, clinicId) => {
-  if (!doctorId || !clinicId) {
-    throw new Error("Doctor id and clinic id are required.");
+export const removeDoctorFromDepartmentService = async (
+  doctorId,
+  departmentId
+) => {
+  if (!doctorId || !departmentId) {
+    throw new Error("Doctor and department id are required.");
   }
 
-  const deletedDoctor = await deleteDoctorQuery(doctorId, clinicId);
+  const removed = await removeDoctorFromDepartmentQuery(doctorId, departmentId);
 
-  if (!deletedDoctor) {
-    throw new Error("Doctor not found for this clinic.");
+  if (!removed) {
+    throw new Error("Doctor not found for this department.");
   }
 
-  return deletedDoctor;
+  return removed;
 };

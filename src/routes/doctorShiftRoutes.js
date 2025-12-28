@@ -9,13 +9,13 @@ import {
 const router = express.Router();
 
 router.put(
-  "/:doctorId/:clinicId",
+  "/:doctorId/:departmentId",
   authenticate,
   authorizeModule("DM", "update"),
   updateDoctorShifts
 );
 router.get(
-  "/:doctorId/:clinicId",
+  "/:doctorId/:departmentId",
   authenticate,
   authorizeModule("DM", "read"),
   getDoctorShifts
