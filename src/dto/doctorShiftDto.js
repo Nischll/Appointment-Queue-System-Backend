@@ -1,5 +1,6 @@
 export class DoctorShiftDto {
   constructor(body) {
+    this.id = body.id ?? null;
     this.day_of_week = body.day_of_week;
     this.is_day_off = body.is_day_off ?? false;
 

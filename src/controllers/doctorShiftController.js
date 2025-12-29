@@ -8,7 +8,7 @@ import { sendResponse } from "../utils/response.js";
 
 export const updateDoctorShifts = async (req, res) => {
   try {
-    const { doctorId, departmentId } = req.params;
+    const { doctorId, departmentId} = req.params;
     const { shifts } = req.body;
     const shiftDtos = shifts.map((s) => new DoctorShiftDto(s));
     await updateDoctorShiftService(doctorId, departmentId, shiftDtos);
@@ -22,7 +22,6 @@ export const updateDoctorShifts = async (req, res) => {
 export const getDoctorShifts = async (req, res) => {
   try {
     const { doctorId, departmentId } = req.params;
-
     const data = await getDoctorShiftsService(doctorId, departmentId);
     const formatted = data.map((d) => ({
       ...d,
@@ -40,7 +39,7 @@ export const getDoctorShifts = async (req, res) => {
     return sendResponse(
       res,
       error.statusCode || 500,
-      "failed to fetch shifts",
+      "Failed to fetch shifts",
       null
     );
   }
