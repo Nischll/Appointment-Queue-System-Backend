@@ -1,21 +1,21 @@
 // src/models/userModel.js
 import pool from "../config/db.js";
 
-export const createUserQuery = async ({ fullname, email, hashedPassword, role_id, isActive }) => {
+export const createUserQuery = async ({ fullName, email, hashedPassword, role_id, isActive }) => {
   const result = await pool.query(
     `
-    INSERT INTO users (fullname, email, password, role_id, isActive)
+    INSERT INTO users (full_name, email, password, role_id, isActive)
     VALUES ($1, $2, $3, $4, $5)
     RETURNING id
     `,
-    [fullname, email, hashedPassword, role_id, isActive ?? true]
+    [fullName, email, hashedPassword, role_id, isActive ?? true]
   );
 
   return result.rows[0].id;
 };
 export const getAllUsersQuery = async () => {
   const result = await pool.query(`
-    SELECT id, fullname, email, role_id, isActive, created_at FROM users
+    SELECT id, full_name, email, role_id, isActive, created_at FROM users
     ORDER BY id ASC
   `);
   return result.rows;
@@ -24,7 +24,7 @@ export const getAllUsersQuery = async () => {
 export const getUsersByRoleQuery = async (roleName) => {
   const result = await pool.query(
     `
-    SELECT u.id, u."fullName", u.email, u.role_id, r.role_name, u.isActive 
+    SELECT u.id, u."full_name", u.email, u.role_id, r.role_name, u.isActive 
     FROM users u
     JOIN roles r ON r.id = u.role_id
     WHERE r.role_name = $1
@@ -38,7 +38,7 @@ export const getUsersByRoleQuery = async (roleName) => {
 export const getUserByIdQuery = async (id) => {
   const result = await pool.query(
     `
-    SELECT id, fullName, email, role_id, isActive, created_at
+    SELECT id, full_name, email, role_id, isActive, created_at
     FROM users WHERE id = $1
     `,
     [id]
@@ -46,15 +46,15 @@ export const getUserByIdQuery = async (id) => {
   return result.rows[0];
 };
 
-export const updateUserQuery = async (id, { fullname, email, role_id, isActive }) => {
+export const updateUserQuery = async (id, { fullName, email, role_id, isActive }) => {
   const result = await pool.query(
     `
     UPDATE users
-    SET fullname = $1, email = $2, role_id = $3, isActive = $4
+    SET full_name = $1, email = $2, role_id = $3, isActive = $4
     WHERE id = $5
     RETURNING *
     `,
-    [fullname, email, role_id, isActive, id]
+    [fullName, email, role_id, isActive, id]
   );
   return result.rows[0];
 };

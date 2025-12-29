@@ -1,67 +1,67 @@
-// src/controllers/userController.js
 import { UserDto } from "../dto/userDto.js";
 import {
-  createUserService,
-  getUsersByTypeService,
-  getUserByIdService,
-  updateUserService,
-  deleteUserService,
-  listUsersService,
+    createUserService,
+    getUsersByTypeService,
+    getUserByIdService,
+    updateUserService,
+    deleteUserService,
+    listUsersService,
 } from "../services/userService.js";
+import {sendResponse} from "../utils/response.js";
+
 
 export const createUser = async (req, res) => {
-  try {
-    const dto = new UserDto(req.body);
-    const id = await createUserService(dto);
-    res.status(200).json({ status: 200, message: "User created", data: { id } });
-  } catch (err) {
-    res.status(400).json({ status: 400, message: err.message });
-  }
+    try {
+        const dto = new UserDto(req.body);
+        const id = await createUserService(dto);
+        sendResponse(res, 201, "User created successfully", { id });
+    } catch (err) {
+        sendResponse(res, 400, err.message);
+    }
 };
 
 export const listUsers = async (req, res) => {
-  try {
-    const users = await listUsersService();
-    res.json({ status: 200, message: "Users fetched successfully", data: users });
-  } catch (err) {
-    res.status(500).json({ status: 500, message: err.message });
-  }
+    try {
+        const users = await listUsersService();
+        sendResponse(res, 200, "Users fetched successfully", users);
+    } catch (err) {
+        sendResponse(res, 500, err.message);
+    }
 };
 
 export const getUsersByType = async (req, res) => {
-  try {
-    const type = req.query.type; // e.g. "admin"
-    const users = await getUsersByTypeService(type);
-    res.json({ status: 200, message: `Users of type ${type} fetched successfully`, data: users });
-  } catch (err) {
-    res.status(404).json({ status: 404, message: err.message });
-  }
+    try {
+        const users = await getUsersByTypeService(req.query.type);
+        sendResponse(res, 200, "Users fetched successfully", users);
+    } catch (err) {
+        sendResponse(res, 404, err.message);
+    }
 };
 
 export const getUserById = async (req, res) => {
-  try {
-    const user = await getUserByIdService(req.params.id);
-    res.json({ status: 200, message: "User fetched successfully", data: user });
-  } catch (err) {
-    res.status(404).json({ status: 404, message: err.message });
-  }
+    try {
+        const user = await getUserByIdService(req.params.id);
+        sendResponse(res, 200, "User fetched successfully", user);
+    } catch (err) {
+        sendResponse(res, 404, err.message);
+    }
 };
 
 export const updateUser = async (req, res) => {
-  try {
-    const dto = new UserDto(req.body);
-    const updated = await updateUserService(req.params.id, dto);
-    res.json({ status: 200, message: "User updated successfully", data: updated });
-  } catch (err) {
-    res.status(400).json({ status: 400, message: err.message });
-  }
+    try {
+        const dto = new UserDto(req.body);
+        const user = await updateUserService(req.params.id, dto);
+        sendResponse(res, 200, "User updated successfully", user);
+    } catch (err) {
+        sendResponse(res, 400, err.message);
+    }
 };
 
 export const deleteUser = async (req, res) => {
-  try {
-    await deleteUserService(req.params.id);
-    res.json({ status: 200, message: "User deleted successfully" });
-  } catch (err) {
-    res.status(404).json({ status: 404, message: err.message });
-  }
+    try {
+        await deleteUserService(req.params.id);
+        sendResponse(res, 200, "User deleted successfully");
+    } catch (err) {
+        sendResponse(res, 404, err.message);
+    }
 };
