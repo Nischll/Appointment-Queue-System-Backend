@@ -10,23 +10,13 @@ import { authorizeModule } from "../middleware/authorizeModule.js";
 
 const router = express.Router();
 
-router.post(
-  "/",
-  authenticate,
-  authorizeModule("CM", "write", true),
-  createClinic
-);
-router.get("/", authenticate, authorizeModule("CM", "read", true), getClinics);
-router.put(
-  "/:id",
-  authenticate,
-  authorizeModule("CM", "update", true),
-  updateClinic
-);
+router.post("/", authenticate, authorizeModule("CM", "write"), createClinic);
+router.get("/", authenticate, authorizeModule("CM", "read"), getClinics);
+router.put("/:id", authenticate, authorizeModule("CM", "update"), updateClinic);
 router.delete(
   "/:id",
   authenticate,
-  authorizeModule("CM", "delete", true),
+  authorizeModule("CM", "delete"),
   deleteClinic
 );
 

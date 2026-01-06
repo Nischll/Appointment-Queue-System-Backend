@@ -1,14 +1,17 @@
 import pool from "../config/db.js";
 
 export const getUserByIdQuery = async (userId) => {
-  const query = `
-    SELECT u.id, u.fullname, u.email, u.isactive,  r.role_name
-    FROM users u 
-    JOIN roles r ON u.role_id = r.id
+  const result = await pool.query(
+    `
+    SELECT u.id, u.fullname, u.email, u.isactive, u.user_type, r.role_name
+    FROM users u
+    LEFT JOIN roles r ON u.role_id = r.id
     WHERE u.id = $1
-  `;
-  const result = await pool.query(query, [userId]);
-  return result.rows[0];
+    `,
+    [userId]
+  );
+
+  return result.rows[0]; 
 };
 
 export const getModulesByROleQuery = async (roleName) => {

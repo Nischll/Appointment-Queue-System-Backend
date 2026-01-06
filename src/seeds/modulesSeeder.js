@@ -54,17 +54,6 @@ const modules = [
     icon: "User",
     path: "/clinic-management",
   },
-  {
-    id: 8,
-    parent_id: 1,
-    orders: 4,
-    name: "Doctor Management",
-    code: "DM",
-    description: "Manage all the doctors.",
-    icon: "User",
-    path: "/doctor-management",
-  },
-
 
   //Reports
   // {

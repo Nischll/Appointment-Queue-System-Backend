@@ -4,11 +4,11 @@ import {
   getUserByIdQuery,
 } from "../models/initModels.js";
 
+// Recursively build module tree
 const buildModuleTree = (modules, parentId = null) => {
   return modules
     .filter((m) => m.parent_id === parentId)
     .map((m) => ({
-      // appointmentCount: null,
       name: m.name,
       icon: m.icon,
       path: m.path,
@@ -22,13 +22,43 @@ export const initService = async (userId) => {
   if (!user) throw new Error("User not found");
 
   let modules = [];
-  if (user.role_name === "admin") {
+
+  if (user.user_type === "EXTERNAL") {
+    // Hardcode modules for external/patient users
+    modules = [
+      {
+        id: 1,
+        name: "Book Appointment",
+        icon: "calendar",
+        path: "/appointments",
+        code: "APPT",
+        parent_id: null,
+      },
+      {
+        id: 2,
+        name: "My Appointments",
+        icon: "list",
+        path: "/my-appointments",
+        code: "MY_APPT",
+        parent_id: null,
+      },
+      {
+        id: 3,
+        name: "Profile",
+        icon: "user",
+        path: "/profile",
+        code: "PROFILE",
+        parent_id: null,
+      },
+    ];
+  } else if (user.role_name === "admin") {
     // Admin gets all modules
     modules = await getAllModulesQuery();
   } else {
-    // Other users get only their allowed modules
+    // Internal staff users get modules by role
     modules = await getModulesByROleQuery(user.role_name);
   }
+
   const moduleList = buildModuleTree(modules);
 
   return {
@@ -37,7 +67,7 @@ export const initService = async (userId) => {
     middleName: user.fullname.split(" ")[1] || "",
     lastName: user.fullname.split(" ")[2] || "",
     email: user.email,
-    role: user.role_name,
+    role: user.role_name || null, 
     isActive: user.isactive,
     moduleList,
   };

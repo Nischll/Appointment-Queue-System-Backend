@@ -10,13 +10,13 @@ import {
 
 const router = express.Router();
 
-router.post("/", authenticate, authorizeModule("DM", "write"), createDoctor);
-router.get("/", authenticate, authorizeModule("DM", "read"), getDoctors);
-router.put("/:id", authenticate, authorizeModule("DM", "update"), updateDoctor);
+router.post("/", authenticate, authorizeModule("CM", "write"), createDoctor);
+router.get("/", authenticate, authorizeModule("CM", "read"), getDoctors);
+router.put("/:id", authenticate, authorizeModule("CM", "update"), updateDoctor);
 router.delete(
   "/:doctorId/:departmentId",
   authenticate,
-  authorizeModule("DM", "delete"),
+  authorizeModule("CM", "delete"),
   deleteDoctor
 );
 

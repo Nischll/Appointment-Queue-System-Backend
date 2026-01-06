@@ -23,7 +23,7 @@ export const signupService = async (dto) => {
   // const patientRoleId = roleResult.rows[0].id;
 
   const newUser = await pool.query(
-    'INSERT INTO users ("fullName", email, password, user_type) VALUES ($1, $2, $3, $4) RETURNING *',
+    'INSERT INTO users ("fullname", email, password, user_type) VALUES ($1, $2, $3, $4) RETURNING *',
     [fullName, email, hashPassword, USER_TYPE.External]
   );
 

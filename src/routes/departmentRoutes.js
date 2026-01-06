@@ -13,20 +13,20 @@ const router = express.Router();
 router.post(
   "/",
   authenticate,
-  authorizeModule("DM", "write"),
+  authorizeModule("CM", "write"),
   createDepartment
 );
-router.get("/", authenticate, authorizeModule("DM", "read"), getDepartments);
+router.get("/", authenticate, authorizeModule("CM", "read"), getDepartments);
 router.put(
   "/:id",
   authenticate,
-  authorizeModule("DM", "update"),
+  authorizeModule("CM", "update"),
   updateDepartment
 );
 router.delete(
   "/:id",
   authenticate,
-  authorizeModule("DM", "delete"),
+  authorizeModule("CM", "delete"),
   deleteDepartment
 );
 export default router;
