@@ -4,7 +4,7 @@ import { generateAccessToken, generateRefreshToken } from "../utils/token.js";
 import USER_TYPE from "../enums/userType.enum.js";
 
 export const signupService = async (dto) => {
-  const { fullName, email, password } = dto;
+  const { full_name, email, password } = dto;
 
   const userCheck = await pool.query("SELECT * FROM users WHERE email=$1", [
     email,
@@ -23,8 +23,8 @@ export const signupService = async (dto) => {
   // const patientRoleId = roleResult.rows[0].id;
 
   const newUser = await pool.query(
-    'INSERT INTO users ("fullname", email, password, user_type) VALUES ($1, $2, $3, $4) RETURNING *',
-    [fullName, email, hashPassword, USER_TYPE.External]
+    'INSERT INTO users ("full_name", email, password, user_type) VALUES ($1, $2, $3, $4) RETURNING *',
+    [full_name, email, hashPassword, USER_TYPE.External]
   );
 
   return newUser.rows[0].id;

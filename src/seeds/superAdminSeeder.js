@@ -37,7 +37,7 @@ const seedSuperAdmin = async () => {
 
     await pool.query(
       `
-      INSERT INTO users (fullName, email, password, role_id, user_type)
+      INSERT INTO users (full_name, email, password, role_id, user_type)
       VALUES ($1, $2, $3, $4, $5)
       `,
       ["Super Admin", email, hashedPassword, adminRoleId, USER_TYPE.SuperAdmin]

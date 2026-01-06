@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS clinic_staff (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    clinic_id INT NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, clinic_id)
+);
