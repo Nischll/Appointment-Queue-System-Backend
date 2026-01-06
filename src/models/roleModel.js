@@ -14,7 +14,12 @@ export const createRoleQuery = async (roleData) => {
 
 export const getAllRolesQuery = async () => {
   const result = await pool.query(
-    `Select id, role_name, code, description FROM roles ORDER BY id ASC `
+    `
+    SELECT id, role_name, code, description
+    FROM roles
+    WHERE id <> 1 AND role_name <> 'admin'
+    ORDER BY id ASC
+    `
   );
   return result.rows;
 };

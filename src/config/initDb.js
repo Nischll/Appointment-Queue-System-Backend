@@ -4,6 +4,7 @@ import path from "path";
 import { pathToFileURL } from "url";
 import seedModules from "../seeds/modulesSeeder.js";
 import seedRoles from "../seeds/rolesSeeder.js";
+import seedSuperAdmin from "../seeds/superAdminSeeder.js";
 
 const runSqlFile = async (filePath) => {
   try {
@@ -23,11 +24,16 @@ const runSqlFiles = async () => {
     const files = fs.readdirSync(modelsDir).filter((f) => f.endsWith(".sql"));
 
     const order = [
+      "enums.sql",
       "modules.sql",
       "roles.sql",
-      "permissions.sql",
       "users.sql",
-      //add other .sql files here
+      "clinics.sql",
+      "departments.sql",
+      "doctors.sql",
+      "doctor_departments.sql",
+      "doctor_shifts.sql",
+      "role_permissions.sql",
     ];
 
     for (const name of order) {
@@ -67,4 +73,5 @@ export const initDb = async () => {
   await runSeeders();
   await seedModules();
   await seedRoles();
+  await seedSuperAdmin();
 };

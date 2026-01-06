@@ -2,7 +2,7 @@ import pool from "../config/db.js";
 
 export const getUserByIdQuery = async (userId) => {
   const query = `
-    SELECT u.id, u."fullName" as fullName, u.email, u.isactive,  r.role_name
+    SELECT u.id, u.fullname, u.email, u.isactive,  r.role_name
     FROM users u 
     JOIN roles r ON u.role_id = r.id
     WHERE u.id = $1

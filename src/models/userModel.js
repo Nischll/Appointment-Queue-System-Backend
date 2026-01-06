@@ -1,14 +1,28 @@
 // src/models/userModel.js
 import pool from "../config/db.js";
+import USER_TYPE from "../enums/userType.enum.js";
 
-export const createUserQuery = async ({ fullName, email, hashedPassword, role_id, isActive }) => {
+export const createUserQuery = async ({
+  fullName,
+  email,
+  hashedPassword,
+  role_id,
+  isActive,
+}) => {
   const result = await pool.query(
     `
-    INSERT INTO users (full_name, email, password, role_id, isActive)
+    INSERT INTO users (full_name, email, password, role_id, user_type, isActive)
     VALUES ($1, $2, $3, $4, $5)
     RETURNING id
     `,
-    [fullName, email, hashedPassword, role_id, isActive ?? true]
+    [
+      fullName,
+      email,
+      hashedPassword,
+      role_id,
+      USER_TYPE.Internal,
+      isActive ?? true,
+    ]
   );
 
   return result.rows[0].id;
@@ -46,7 +60,10 @@ export const getUserByIdQuery = async (id) => {
   return result.rows[0];
 };
 
-export const updateUserQuery = async (id, { fullName, email, role_id, isActive }) => {
+export const updateUserQuery = async (
+  id,
+  { fullName, email, role_id, isActive }
+) => {
   const result = await pool.query(
     `
     UPDATE users
@@ -60,6 +77,9 @@ export const updateUserQuery = async (id, { fullName, email, role_id, isActive }
 };
 
 export const deleteUserQuery = async (id) => {
-  const result = await pool.query(`DELETE FROM users WHERE id = $1 RETURNING id`, [id]);
+  const result = await pool.query(
+    `DELETE FROM users WHERE id = $1 RETURNING id`,
+    [id]
+  );
   return result.rows[0];
 };

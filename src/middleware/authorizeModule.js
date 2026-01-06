@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import USER_TYPE from "../enums/userType.enum.js";
 import { sendResponse } from "../utils/response.js";
 
 /**
@@ -17,14 +18,29 @@ export const authorizeModule = (
 ) => {
   return async (req, res, next) => {
     try {
-      if (!req.user || !req.user.role) {
+      if (!req.user) {
         return sendResponse(res, 403, "Access denied", null);
       }
 
-      const roleName = req.user.role;
+      const { user_type, role } = req.user;
+
+      // EXTERNAL users (patients) are never allowed here
+      if (user_type === USER_TYPE.External) {
+        return sendResponse(
+          res,
+          403,
+          "Patient users are not allowed to access this resource",
+          null
+        );
+      }
+
+      // INTERNAL user must have a role
+      if (user_type === USER_TYPE.Internal && !role) {
+        return sendResponse(res, 403, "Role not assigned", null);
+      }
 
       // Admin bypass
-      if (roleName === "admin") return next();
+      if (role === "admin" || user_type === USER_TYPE.SuperAdmin) return next();
 
       // Fetch permissions for the module
       const query = `
@@ -34,7 +50,7 @@ export const authorizeModule = (
         JOIN modules m ON rp.module_id = m.id
         WHERE r.role_name = $1 AND m.code = $2
       `;
-      const result = await pool.query(query, [roleName, moduleCode]);
+      const result = await pool.query(query, [role, moduleCode]);
 
       // Module not found in permissions
       if (result.rows.length === 0) {
