@@ -62,10 +62,10 @@ export const initService = async (userId) => {
   const moduleList = buildModuleTree(modules);
 
   return {
-    fullName: user.fullname,
-    firstName: user.fullname.split(" ")[0] || "",
-    middleName: user.fullname.split(" ")[1] || "",
-    lastName: user.fullname.split(" ")[2] || "",
+    fullName: user.full_name,
+    firstName: user.full_name.split(" ")[0] || "",
+    middleName: user.full_name.split(" ")[1] || "",
+    lastName: user.full_name.split(" ")[2] || "",
     email: user.email,
     role: user.role_name || null, 
     isActive: user.isactive,

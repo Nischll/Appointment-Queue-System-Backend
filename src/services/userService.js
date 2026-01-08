@@ -43,9 +43,10 @@ export const getAllUsersService = async () => {
 
   return users.map((u) => ({
     id: u.id,
-    fullname: u.fullname,
+    fullName: u.full_name,
     email: u.email,
-    role: u.role_name,
+    roleName: u.role_name,
+    roleId: u.role_id,
     isActive: u.isactive,
     clinics: u.clinics,
   }));
@@ -69,9 +70,10 @@ export const getUserByIdService = async (id) => {
     id: user.id,
     fullName: user.full_name,
     email: user.email,
+    roleName: user.role_name,
     roleId: user.role_id,
     isActive: user.isactive,
-    clinic_ids: user.clinic_ids,
+    clinics: user.clinics,
   };
 };
 

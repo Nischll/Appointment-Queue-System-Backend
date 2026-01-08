@@ -1,0 +1,8 @@
+-- CREATE TABLE patient_profiles (
+--     user_id INT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+--     phone VARCHAR(20),
+--     date_of_birth DATE,
+--     gender VARCHAR(10),
+--     address TEXT,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- );

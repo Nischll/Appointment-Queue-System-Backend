@@ -59,9 +59,10 @@ export const getStaffWithClinicsQuery = async () => {
   const result = await pool.query(`
     SELECT
       u.id,
-      u.full_name AS fullname,
+      u.full_name,
       u.email,
       u.isactive,
+      u.role_id,
       r.role_name,
       COALESCE(
         JSON_AGG(
@@ -81,7 +82,7 @@ export const getStaffWithClinicsQuery = async () => {
       AND u.role_id <> (
           SELECT id FROM roles WHERE role_name = 'admin' LIMIT 1
       )
-    GROUP BY u.id, r.role_name
+    GROUP BY u.id, u.role_id, r.role_name
     ORDER BY u.id ASC
   `);
 
@@ -119,16 +120,23 @@ export const getUserByIdWithClinicsQuery = async (id) => {
       u.email,
       u.role_id,
       u.isactive,
+      u.role_id,
       r.role_name,
       COALESCE(
-        JSON_AGG(cs.clinic_id) FILTER (WHERE cs.clinic_id IS NOT NULL),
+        JSON_AGG(
+          DISTINCT JSONB_BUILD_OBJECT(
+            'id', c.id,
+            'name', c.name
+          )
+        ) FILTER (WHERE c.id IS NOT NULL),
         '[]'
-      ) AS clinic_ids
+      ) AS clinics
     FROM users u
     LEFT JOIN roles r ON r.id = u.role_id
     LEFT JOIN clinic_staff cs ON cs.user_id = u.id
+    LEFT JOIN clinics c ON c.id = cs.clinic_id
     WHERE u.id = $1 AND u.isactive = TRUE
-    GROUP BY u.id, r.role_name
+    GROUP BY u.id, u.role_id, r.role_name
   `,
     [id]
   );
