@@ -3,6 +3,7 @@ import {
   createClinicQuery,
   deleteClinicQuery,
   getAllClinicQuery,
+  getClinicByStaffQuery,
   updateClinicQuery,
 } from "../models/clinicModel.js";
 
@@ -17,6 +18,14 @@ export const createClinicService = async (data) => {
 
 export const getAllClinicService = async () => {
   return await getAllClinicQuery();
+};
+
+export const getClinicByStaffService = async (userId) => {
+  if (!userId) {
+    throw new Error("user id is required.");
+  }
+
+  return await getClinicByStaffQuery(userId);
 };
 
 export const updateClinicService = async (clinicId, clinicDto) => {

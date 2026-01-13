@@ -1,10 +1,13 @@
 import pool from "../config/db.js";
 import bcrypt from "bcrypt";
 import USER_TYPE from "../enums/userType.enum.js";
+import GENDER_TYPE from "../enums/genderType.enum.js";
 
 const seedSuperAdmin = async () => {
   try {
     const email = process.env.SUPERADMIN_EMAIL;
+    const username = process.env.SUPERADMIN_USERNAME;
+    const phone = process.env.SUPERADMIN_PHONE;
     const password = process.env.SUPERADMIN_PASSWORD;
 
     if (!email || !password) {
@@ -25,7 +28,7 @@ const seedSuperAdmin = async () => {
 
     // Get admin role
     const roleResult = await pool.query(
-      "SELECT id FROM roles WHERE role_name = 'admin'"
+      "SELECT id FROM roles WHERE code = 'SUPERADMIN'"
     );
 
     if (roleResult.rows.length === 0) {
@@ -37,10 +40,19 @@ const seedSuperAdmin = async () => {
 
     await pool.query(
       `
-      INSERT INTO users (full_name, email, password, role_id, user_type)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO users (full_name, username, email, password, phone, role_id, user_type, gender)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       `,
-      ["Super Admin", email, hashedPassword, adminRoleId, USER_TYPE.SuperAdmin]
+      [
+        "Super Admin",
+        username,
+        email,
+        hashedPassword,
+        phone,
+        adminRoleId,
+        USER_TYPE.SuperAdmin,
+        GENDER_TYPE.Male,
+      ]
     );
 
     console.log("Superadmin user seeded successfully");

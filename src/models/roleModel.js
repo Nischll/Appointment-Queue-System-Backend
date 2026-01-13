@@ -17,7 +17,7 @@ export const getAllRolesQuery = async () => {
     `
     SELECT id, role_name, code, description
     FROM roles
-    WHERE id <> 1 AND role_name <> 'admin'
+    WHERE id <> 1 AND code <> 'SUPERADMIN'
     ORDER BY id ASC
     `
   );

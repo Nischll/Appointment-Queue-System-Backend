@@ -1,7 +1,6 @@
 import { UserDto } from "../dto/userDto.js";
 import {
   createUserService,
-  getUsersByTypeService,
   getUserByIdService,
   updateUserService,
   deleteUserService,
@@ -13,7 +12,7 @@ export const createUser = async (req, res) => {
   try {
     const dto = new UserDto(req.body);
     const data = await createUserService(dto);
-    sendResponse(res, 201, "User created successfully", data.id);
+    sendResponse(res, 201, "User created successfully", data);
   } catch (err) {
     console.error("error adding staff:", err);
     sendResponse(res, 400, err.message);
@@ -30,16 +29,16 @@ export const listUsers = async (req, res) => {
   }
 };
 
-export const getUsersByType = async (req, res) => {
-  try {
-    const users = await getUsersByTypeService(req.query.type);
-    sendResponse(res, 200, "Users fetched successfully", users);
-  } catch (err) {
-    console.error("Get users by type error:", err);
+// export const getUsersByType = async (req, res) => {
+//   try {
+//     const users = await getUsersByTypeService(req.query.type);
+//     sendResponse(res, 200, "Users fetched successfully", users);
+//   } catch (err) {
+//     console.error("Get users by type error:", err);
 
-    sendResponse(res, 404, err.message);
-  }
-};
+//     sendResponse(res, 404, err.message);
+//   }
+// };
 
 export const getUserById = async (req, res) => {
   try {
@@ -67,7 +66,7 @@ export const updateUser = async (req, res) => {
 export const deleteUser = async (req, res) => {
   try {
     await deleteUserService(req.params.id);
-    sendResponse(res, 200, "User deleted successfully");
+    sendResponse(res, 200, "User removed successfully");
   } catch (err) {
     console.error("delete user error:", err);
 

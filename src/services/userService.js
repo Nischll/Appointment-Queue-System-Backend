@@ -1,6 +1,5 @@
 import bcrypt from "bcrypt";
 import {
-  getUsersByRoleQuery,
   createUserQuery,
   updateUserQuery,
   deleteUserQuery,
@@ -12,14 +11,27 @@ import {
 import { mapUserToResponse } from "../mappers/userMapper.js";
 
 export const createUserService = async (dto) => {
-  const { full_name, email, password, role_id, clinic_ids, isActive } = dto;
+  const {
+    full_name,
+    username,
+    email,
+    password,
+    phone,
+    gender,
+    role_id,
+    clinic_ids,
+    isActive,
+  } = dto;
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const userId = await createUserQuery({
     full_name,
+    username,
     email,
     hashedPassword,
+    phone,
+    gender,
     role_id,
     isActive,
   });
@@ -44,7 +56,10 @@ export const getAllUsersService = async () => {
   return users.map((u) => ({
     id: u.id,
     fullName: u.full_name,
+    username: u.username,
     email: u.email,
+    phone: u.phone,
+    gender: u.gender,
     roleName: u.role_name,
     roleId: u.role_id,
     isActive: u.isactive,
@@ -52,15 +67,15 @@ export const getAllUsersService = async () => {
   }));
 };
 
-export const getUsersByTypeService = async (type) => {
-  const users = await getUsersByRoleQuery(type);
+// export const getUsersByTypeService = async (type) => {
+//   const users = await getUsersByRoleQuery(type);
 
-  if (users.length === 0) {
-    throw new Error("No users found for this role");
-  }
+//   if (users.length === 0) {
+//     throw new Error("No users found for this role");
+//   }
 
-  return users.map(mapUserToResponse);
-};
+//   return users.map(mapUserToResponse);
+// };
 
 export const getUserByIdService = async (id) => {
   const user = await getUserByIdWithClinicsQuery(id);
@@ -69,7 +84,10 @@ export const getUserByIdService = async (id) => {
   return {
     id: user.id,
     fullName: user.full_name,
+    username: user.username,
     email: user.email,
+    phone: user.phone,
+    gender: user.gender,
     roleName: user.role_name,
     roleId: user.role_id,
     isActive: user.isactive,

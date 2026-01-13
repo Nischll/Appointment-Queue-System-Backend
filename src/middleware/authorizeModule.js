@@ -22,7 +22,7 @@ export const authorizeModule = (
         return sendResponse(res, 403, "Access denied", null);
       }
 
-      const { user_type, role } = req.user;
+      const { user_type, roleCode } = req.user;
 
       // EXTERNAL users (patients) are never allowed here
       if (user_type === USER_TYPE.External) {
@@ -35,12 +35,12 @@ export const authorizeModule = (
       }
 
       // INTERNAL user must have a role
-      if (user_type === USER_TYPE.Internal && !role) {
+      if (user_type === USER_TYPE.Internal && !roleCode) {
         return sendResponse(res, 403, "Role not assigned", null);
       }
 
       // Admin bypass
-      if (role === "admin" || user_type === USER_TYPE.SuperAdmin) return next();
+      if (roleCode === "SUPERADMIN" || user_type === USER_TYPE.SuperAdmin) return next();
 
       // Fetch permissions for the module
       const query = `
@@ -48,9 +48,9 @@ export const authorizeModule = (
         FROM roles r
         JOIN role_permissions rp ON r.id = rp.role_id
         JOIN modules m ON rp.module_id = m.id
-        WHERE r.role_name = $1 AND m.code = $2
+        WHERE r.code = $1 AND m.code = $2
       `;
-      const result = await pool.query(query, [role, moduleCode]);
+      const result = await pool.query(query, [roleCode, moduleCode]);
 
       // Module not found in permissions
       if (result.rows.length === 0) {

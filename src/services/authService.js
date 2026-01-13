@@ -4,10 +4,14 @@ import { generateAccessToken, generateRefreshToken } from "../utils/token.js";
 import USER_TYPE from "../enums/userType.enum.js";
 
 export const signupService = async (dto) => {
-  const { full_name, email, password } = dto;
+  const { full_name, username, email, phone, gender, password } = dto;
 
-  const userCheck = await pool.query("SELECT * FROM users WHERE email=$1", [
-    email,
+  if (!username || !password || !gender) {
+    throw new Error("username, password and gender is required.");
+  }
+
+  const userCheck = await pool.query("SELECT * FROM users WHERE username=$1", [
+    username,
   ]);
 
   if (userCheck.rows.length > 0) {
@@ -17,21 +21,24 @@ export const signupService = async (dto) => {
   const salt = await bcrypt.genSalt(10);
   const hashPassword = await bcrypt.hash(password, salt);
 
-  // const roleResult = await pool.query(
-  //   "SELECT id FROM roles WHERE role_name = 'patient'"
-  // );
-  // const patientRoleId = roleResult.rows[0].id;
-
   const newUser = await pool.query(
-    'INSERT INTO users ("full_name", email, password, user_type) VALUES ($1, $2, $3, $4) RETURNING *',
-    [full_name, email, hashPassword, USER_TYPE.External]
+    "INSERT INTO users (full_name, username, email, phone, gender, password, user_type) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+    [
+      full_name,
+      username,
+      email,
+      phone,
+      gender,
+      hashPassword,
+      USER_TYPE.External,
+    ]
   );
 
   return newUser.rows[0].id;
 };
 
 export const loginService = async (dto) => {
-  const { email, password } = dto;
+  const { username, password } = dto;
 
   const userQuery = await pool.query(
     `
@@ -40,12 +47,14 @@ export const loginService = async (dto) => {
       u.email,
       u.password,
       u.user_type,
-      r.role_name
+      u.username,
+      r.role_name,
+      r.code
     FROM users u
     LEFT JOIN roles r ON u.role_id = r.id
-    WHERE u.email = $1
+    WHERE u.username = $1
     `,
-    [email]
+    [username]
   );
 
   if (userQuery.rows.length === 0) {
@@ -62,8 +71,10 @@ export const loginService = async (dto) => {
   const payload = {
     id: user.id,
     email: user.email,
-    user_type: user.user_type, 
+    username: user.username,
+    user_type: user.user_type,
     role: user.role_name || null,
+    roleCode: user.code || null,
   };
 
   const accessToken = generateAccessToken(payload);

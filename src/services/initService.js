@@ -51,7 +51,7 @@ export const initService = async (userId) => {
         parent_id: null,
       },
     ];
-  } else if (user.role_name === "admin") {
+  } else if (user.code === "SUPERADMIN") {
     // Admin gets all modules
     modules = await getAllModulesQuery();
   } else {
@@ -62,12 +62,14 @@ export const initService = async (userId) => {
   const moduleList = buildModuleTree(modules);
 
   return {
+    userId: user.id,
     fullName: user.full_name,
-    firstName: user.full_name.split(" ")[0] || "",
-    middleName: user.full_name.split(" ")[1] || "",
-    lastName: user.full_name.split(" ")[2] || "",
+    username: user.username,
     email: user.email,
+    phone: user.phone,
+    gender: user.gender,
     role: user.role_name || null, 
+    roleCode: user.code || null, 
     isActive: user.isactive,
     moduleList,
   };

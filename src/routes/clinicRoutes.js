@@ -4,6 +4,7 @@ import {
   createClinic,
   deleteClinic,
   getClinics,
+  getClinicsByStaff,
   updateClinic,
 } from "../controllers/clinicController.js";
 import { authorizeModule } from "../middleware/authorizeModule.js";
@@ -12,6 +13,12 @@ const router = express.Router();
 
 router.post("/", authenticate, authorizeModule("CM", "write"), createClinic);
 router.get("/", authenticate, authorizeModule("CM", "read"), getClinics);
+router.get(
+  "/:id",
+  authenticate,
+  authorizeModule("CM", "read"),
+  getClinicsByStaff
+);
 router.put("/:id", authenticate, authorizeModule("CM", "update"), updateClinic);
 router.delete(
   "/:id",

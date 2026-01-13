@@ -1,6 +1,6 @@
 export class LoginDto {
   constructor(body) {
-    this.email = body.email?.trim();
+    this.username = body.username?.trim();
     this.password = body.password;
   }
 }

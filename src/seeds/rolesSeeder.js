@@ -2,8 +2,8 @@ import pool from "../config/db.js";
 
 const defaultRoles = [
   {
-    role_name: "admin",
-    code: "ADMIN",
+    role_name: "Super Admin",
+    code: "SUPERADMIN",
     description: "System Administrator",
   },
 ];

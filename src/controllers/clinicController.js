@@ -3,6 +3,7 @@ import {
   createClinicService,
   deleteClinicService,
   getAllClinicService,
+  getClinicByStaffService,
   updateClinicService,
 } from "../services/clinicService.js";
 import { sendResponse } from "../utils/response.js";
@@ -21,6 +22,17 @@ export const createClinic = async (req, res) => {
 export const getClinics = async (req, res) => {
   try {
     const data = await getAllClinicService();
+    return sendResponse(res, 200, "Successfully retrieved clinics", data);
+  } catch (error) {
+    console.error("error getting clinics", error);
+    return sendResponse(res, 500, error.message, null);
+  }
+};
+
+export const getClinicsByStaff = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const data = await getClinicByStaffService(userId);
     return sendResponse(res, 200, "Successfully retrieved clinics", data);
   } catch (error) {
     console.error("error getting clinics", error);

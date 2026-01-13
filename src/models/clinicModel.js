@@ -27,6 +27,23 @@ export const getAllClinicQuery = async () => {
   return result.rows;
 };
 
+export const getClinicByStaffQuery = async (userId) => {
+  const result = await pool.query(
+    `
+      SELECT 
+      cs.clinic_id AS id,
+      c.name
+      FROM clinic_staff cs
+      LEFT JOIN clinics c ON c.id = cs.clinic_id
+      WHERE cs.user_id = $1
+      GROUP BY cs.clinic_id, c.name
+    `,
+    [userId]
+  );
+
+  return result.rows;
+};
+
 export const updateClinicQuery = async (clinicId, clinicData) => {
   const { name, address, contact } = clinicData;
 
