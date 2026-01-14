@@ -4,6 +4,7 @@ import {
   deletePatientService,
   getAllPatientService,
   getPatientByIdService,
+  updatePatientService,
 } from "../services/patientService.js";
 import { sendResponse } from "../utils/response.js";
 
@@ -62,5 +63,22 @@ export const deletePatient = async (req, res) => {
       "Failed to remove patients",
       null
     );
+  }
+};
+
+export const updatePatient = async (req, res) => {
+  try {
+    const patientId = req.params.id;
+    const dto = new SignupDto(req.body);
+    const data = await updatePatientService(patientId, dto);
+    return sendResponse(
+      res,
+      200,
+      "Patient updated successfully.",
+      data.user_id
+    );
+  } catch (error) {
+    console.log("error updating patient details", error);
+    return sendResponse(res, error.statusCode || 500, error.message, null);
   }
 };
