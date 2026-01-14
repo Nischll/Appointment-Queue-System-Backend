@@ -190,6 +190,7 @@ export const deleteUserQuery = async (id) => {
     SET isactive = FALSE
     WHERE id = $1
       AND isactive = TRUE
+      AND user_type = 'INTERNAL'
       RETURNING id
     `,
     [id]
