@@ -56,7 +56,7 @@ const modules = [
   },
 
   // Patient Management
-    {
+  {
     id: 8,
     parent_id: null,
     orders: 3,
@@ -65,6 +65,16 @@ const modules = [
     description: "Manage all the patients.",
     icon: "ShieldUser",
     path: "/patient-management",
+  },
+  {
+    id: 9,
+    parent_id: null,
+    orders: 4,
+    name: "Appointment Management",
+    code: "AM",
+    description: "Manage all the appointments.",
+    icon: "ShieldUser",
+    path: "/appointment-management",
   },
 
   //Reports

@@ -40,7 +40,7 @@ export const refreshToken = async (req, res) => {
   const { refreshToken } = req.body;
 
   if (!refreshToken) {
-    return sendResponse(res, 401, "Refresh token required", null);
+    return sendResponse(res, 403, "Refresh token required", null);
   }
 
   try {

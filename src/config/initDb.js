@@ -35,7 +35,8 @@ const runSqlFiles = async () => {
       "doctor_departments.sql",
       "doctor_shifts.sql",
       "role_permissions.sql",
-      "patient_profiles.sql"
+      "patient_profiles.sql",
+      "appointments.sql",
     ];
 
     for (const name of order) {

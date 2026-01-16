@@ -16,3 +16,12 @@ BEGIN
         CREATE TYPE gender AS ENUM ('M','F', 'O');
     END IF;
 END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type WHERE typname = 'apppointment_type'
+    ) THEN
+        CREATE TYPE apppointment_type AS ENUM ('COUNSELLING','REGULAR_CHECKUP', 'FOLLOW_UP', 'OPERATION');
+    END IF;
+END $$;
