@@ -1,7 +1,12 @@
-import { StaffAppointmentDto } from "../dto/appointmentDto.js";
 import {
+  CancelAPpointmentDto,
+  StaffAppointmentDto,
+} from "../dto/appointmentDto.js";
+import {
+  cancelAppointmentService,
   checkInAppointmentService,
   CompleteAppointmentService,
+  noShowAppointmentService,
   staffBookAppointmentService,
   startAppointmentService,
 } from "../services/appointmentService.js";
@@ -45,9 +50,38 @@ export const completeAppointment = async (req, res) => {
   try {
     const appointmentId = req.params.id;
     const data = await CompleteAppointmentService(appointmentId);
-    return sendResponse(res, 200, "Appointment completed successfully", data.id);
+    return sendResponse(
+      res,
+      200,
+      "Appointment completed successfully",
+      data.id
+    );
   } catch (error) {
     console.log("error while completing appointment.", error);
+    return sendResponse(res, error.statusCode || 500, error.message, null);
+  }
+};
+
+export const cancelAppointment = async (req, res) => {
+  try {
+    const staffId = req.user.id;
+    const appointmentId = req.params.id;
+    const dto = new CancelAPpointmentDto(req.body);
+    const data = await cancelAppointmentService(appointmentId, staffId, dto);
+    return sendResponse(res, 200, "Appointment cancelled.", data.id);
+  } catch (error) {
+    console.log("error cancelling appointment.", error);
+    return sendResponse(res, error.statusCode || 500, error.message, null);
+  }
+};
+
+export const noShowAppointment = async (req, res) => {
+  try {
+    const appointmentId = req.params.id;
+    const data = await noShowAppointmentService(appointmentId);
+    return sendResponse(res, 200, "Appointment marked as no-show.", data.id);
+  } catch (error) {
+    console.log("error marking no-show appointment.", error);
     return sendResponse(res, error.statusCode || 500, error.message, null);
   }
 };

@@ -204,3 +204,50 @@ export const completeAppointmentQuery = async (client, appointmentId) => {
 
   return result.rows[0];
 };
+
+export const cancelAppointmentQuery = async (
+  client,
+  appointmentId,
+  staffId,
+  reason
+) => {
+  const result = await client.query(
+    `
+    UPDATE appointments
+    SET 
+      status = $1,
+      cancellation_reason =  $2,
+      cancelled_by = $3,
+      updated_at = NOW()
+    WHERE id = $4
+      AND status = ANY($5)
+    RETURNING *
+    `,
+    [
+      APPOINTMENT_STATUS.Cancelled,
+      reason || "Cancelled By Staff",
+      staffId,
+      appointmentId,
+      [APPOINTMENT_STATUS.Booked, APPOINTMENT_STATUS.Checked_In],
+    ]
+  );
+
+  return result.rows[0];
+};
+
+export const noShowAppointmentQuery = async (client, appointmentId) => {
+  const result = await client.query(
+    `
+    UPDATE appointments
+    SET
+      status = $1,
+      updated_at = NOW()
+    WHERE id = $2
+      AND status = $3
+    RETURNING *
+    `,
+    [APPOINTMENT_STATUS.No_Show, appointmentId, APPOINTMENT_STATUS.Booked]
+  );
+
+  return result.rows[0];
+};

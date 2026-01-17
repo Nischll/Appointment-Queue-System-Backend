@@ -2,12 +2,14 @@ import pool from "../config/db.js";
 import APPOINTMENT_STATUS from "../enums/appointmentStatus.enum.js";
 import {
   assignQueueNumberQuery,
+  cancelAppointmentQuery,
   checkAppointmentExistsQuery,
   checkDoctorInProgressQuery,
   checkDuplicateAppointmentQuery,
   checkInAppointmentQuery,
   completeAppointmentQuery,
   insertAppointmentQuery,
+  noShowAppointmentQuery,
   startAppointmentQuery,
 } from "../models/appointmentModel.js";
 
@@ -152,6 +154,95 @@ export const CompleteAppointmentService = async (appointmentId) => {
 
     await client.query("COMMIT");
     return completed;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+export const cancelAppointmentService = async (
+  appointmentId,
+  staffId,
+  data
+) => {
+  if (!appointmentId) throw new Error("Appointment not found.");
+
+  const { reason } = data;
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const existAppointment = await checkAppointmentExistsQuery(
+      client,
+      appointmentId
+    );
+
+    if (!existAppointment) {
+      throw new Error("Appointment not found.");
+    }
+
+    const status = existAppointment.status;
+    if (
+      ![APPOINTMENT_STATUS.Booked, APPOINTMENT_STATUS.Checked_In].includes(
+        status
+      )
+    ) {
+      throw new Error(
+        "Cannot cancel a completed or already cancelled appointment."
+      );
+    }
+
+    const cancelled = await cancelAppointmentQuery(
+      client,
+      appointmentId,
+      staffId,
+      reason
+    );
+
+    await client.query("COMMIT");
+
+    return cancelled;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+export const noShowAppointmentService = async (appointmentId) => {
+  if (!appointmentId) throw new Error("Appointment not found.");
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const existAppointment = await checkAppointmentExistsQuery(
+      client,
+      appointmentId
+    );
+
+    if (!existAppointment) {
+      throw new Error("Appointment not found.");
+    }
+
+    const status = existAppointment.status;
+    if (![APPOINTMENT_STATUS.Booked].includes(status)) {
+      throw new Error(
+        "Cannot mark no-show for completed or cancelled appointment."
+      );
+    }
+
+    const noShow = await noShowAppointmentQuery(client, appointmentId);
+
+    await client.query("COMMIT");
+
+    return noShow;
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;

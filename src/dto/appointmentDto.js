@@ -24,3 +24,9 @@ export class StaffAppointmentDto {
       throw new Error("Scheduled start time is required");
   }
 }
+
+export class CancelAPpointmentDto {
+  constructor(body) {
+    this.reason = body.reason?.trim();
+  }
+}

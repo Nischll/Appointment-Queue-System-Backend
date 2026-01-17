@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS appointments (
     clinic_id INT NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
     department_id INT NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
     created_by INT REFERENCES users(id) ON DELETE CASCADE,
+    cancelled_by INT REFERENCES users(id) ON DELETE CASCADE,
 
     -- Appointment classification
     appointment_type apppointment_type NOT NULL,
@@ -28,27 +29,28 @@ CREATE TABLE IF NOT EXISTS appointments (
     actual_end_time TIMESTAMP,
 
     -- Status lifecycle
-    status VARCHAR(30) NOT NULL DEFAULT 'BOOKED',
+    status appointment_status NOT NULL DEFAULT 'BOOKED',
 
     -- Meta
     notes TEXT,
+    cancellation_reason TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     -- Ensure doctor belongs to clinic + department logically (soft enforcement)
-    CONSTRAINT valid_status CHECK (
-        status IN (
-            'REQUESTED',
-            'APPROVED',
-            'REJECTED',
-            'BOOKED',
-            'CHECKED_IN',
-            'IN_PROGRESS',
-            'COMPLETED',
-            'NO_SHOW',
-            'CANCELLED'
-        )
-    ),
+    -- CONSTRAINT valid_status CHECK (
+    --     status IN (
+    --         'REQUESTED',
+    --         'APPROVED',
+    --         'REJECTED',
+    --         'BOOKED',
+    --         'CHECKED_IN',
+    --         'IN_PROGRESS',
+    --         'COMPLETED',
+    --         'NO_SHOW',
+    --         'CANCELLED'
+    --     )
+    -- ),
 
     -- Queue number must be positive
     CONSTRAINT valid_queue CHECK (queue_number > 0)

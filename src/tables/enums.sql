@@ -25,3 +25,21 @@ BEGIN
         CREATE TYPE apppointment_type AS ENUM ('COUNSELLING','REGULAR_CHECKUP', 'FOLLOW_UP', 'OPERATION');
     END IF;
 END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type WHERE typname = 'appointment_status'
+    ) THEN
+        CREATE TYPE appointment_status AS ENUM (   
+            'REQUESTED',
+            'APPROVED',
+            'REJECTED',
+            'BOOKED',
+            'CHECKED_IN',
+            'IN_PROGRESS',
+            'COMPLETED',
+            'NO_SHOW',
+            'CANCELLED');
+    END IF;
+END $$;
