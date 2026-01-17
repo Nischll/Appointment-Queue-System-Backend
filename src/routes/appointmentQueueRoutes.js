@@ -1,7 +1,7 @@
 import express from "express";
-import { getAppointmentMetrics } from "../controllers/appointmentMetricsController.js";
 import { authenticate } from "../middleware/auth.js";
 import { authorizeModule } from "../middleware/authorizeModule.js";
+import { getAppointmentQueue } from "../controllers/appointmentQueueController.js";
 
 const router = express.Router();
 
@@ -9,7 +9,7 @@ router.get(
   "/",
   authenticate,
   authorizeModule("AM", "read"),
-  getAppointmentMetrics,
+  getAppointmentQueue,
 );
 
 export default router;
