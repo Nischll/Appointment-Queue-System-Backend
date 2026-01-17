@@ -63,7 +63,7 @@ const modules = [
     name: "Patient Management",
     code: "PM",
     description: "Manage all the patients.",
-    icon: "ShieldUser",
+    icon: "UserRoundCog",
     path: "/patient-management",
   },
   {
@@ -73,7 +73,7 @@ const modules = [
     name: "Appointment Management",
     code: "AM",
     description: "Manage all the appointments.",
-    icon: "ShieldUser",
+    icon: "CalendarPlus",
     path: "/appointment-management",
   },
 

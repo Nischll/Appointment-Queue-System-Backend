@@ -14,6 +14,7 @@ import patientRoutes from "./routes/patientRoutes.js";
 import doctorRoutes from "./routes/doctorRoutes.js";
 import doctorShiftRoutes from "./routes/doctorShiftRoutes.js";
 import appointmentRoutes from "./routes/appointmentRoutes.js";
+import appointmentMetricsRoutes from "./routes/appointmentMetricsRoutes.js";
 
 dotenv.config();
 
@@ -38,5 +39,7 @@ app.use("/api/doctor", doctorRoutes);
 app.use("/api/doctor-shifts", doctorShiftRoutes);
 
 app.use("/api/appointments", appointmentRoutes);
+
+app.use("/api/metrics", appointmentMetricsRoutes);
 
 export default app;
