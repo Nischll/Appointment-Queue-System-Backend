@@ -43,22 +43,53 @@ export const addDoctorToDepartmentsQuery = async (doctorId, departmentIds) => {
 
 export const getDoctorsByDepartmentQuery = async (departmentId) => {
   const result = await pool.query(
-    `
-    SELECT
-      d.id,
-      d.name,
-      d.phone,
-      d.email,
+    // `
+    // SELECT
+    //   d.id,
+    //   d.name,
+    //   d.phone,
+    //   d.email,
 
-      de.id AS department_id,
-      de.name AS department_name
-    FROM doctor_departments dd
-    JOIN doctors d ON d.id = dd.doctor_id
-    JOIN departments de ON de.id = dd.department_id
-    WHERE dd.department_id = $1
-      AND dd.status = TRUE
-      AND d.status = TRUE
-    ORDER BY d.name
+    //   de.id AS department_id,
+    //   de.name AS department_name
+    // FROM doctor_departments dd
+    // JOIN doctors d ON d.id = dd.doctor_id
+    // JOIN departments de ON de.id = dd.department_id
+    // WHERE dd.department_id = $1
+    //   AND dd.status = TRUE
+    //   AND d.status = TRUE
+    // ORDER BY d.name
+    // `,
+    // [departmentId]
+
+      `
+      SELECT
+        d.id,
+        d.name,
+        d.phone,
+        d.email,
+
+        CASE WHEN ds.is_day_off = TRUE THEN NULL ELSE ds.start_time END AS today_start_time,
+        CASE WHEN ds.is_day_off = TRUE THEN NULL ELSE ds.end_time END AS today_end_time,
+        COALESCE(ds.is_day_off, FALSE) AS is_day_off
+
+      FROM doctor_departments dd
+      JOIN doctors d ON d.id = dd.doctor_id
+      JOIN departments de ON de.id = dd.department_id
+      JOIN clinics c ON c.id = de.clinic_id
+      LEFT JOIN doctor_shifts ds
+          ON ds.doctor_id = d.id
+        AND ds.department_id = dd.department_id
+        AND ds.clinic_id = c.id
+        AND ds.day_of_week = CASE
+                              WHEN EXTRACT(DOW FROM CURRENT_DATE) = 0 THEN 1
+                              ELSE EXTRACT(DOW FROM CURRENT_DATE) + 1
+                            END
+
+      WHERE dd.department_id = $1
+        AND dd.status = TRUE
+        AND d.status = TRUE
+      ORDER BY d.name
     `,
     [departmentId]
   );

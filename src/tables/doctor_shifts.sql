@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS doctor_shifts (
     clinic_id INT NOT NULL,
     department_id INT NOT NULL,
 
-    day_of_week SMALLINT NOT NULL,
+    day_of_week INT NOT NULL CHECK (day_of_week BETWEEN 1 AND 7),
 
     start_time TIME,
     end_time TIME,
@@ -16,8 +16,6 @@ CREATE TABLE IF NOT EXISTS doctor_shifts (
     FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE CASCADE,
     FOREIGN KEY (clinic_id) REFERENCES clinics(id) ON DELETE CASCADE,
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
-
-    CONSTRAINT valid_day CHECK (day_of_week BETWEEN 1 AND 7),
 
     CONSTRAINT valid_time CHECK (
       is_day_off = TRUE OR
