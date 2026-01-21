@@ -14,7 +14,7 @@ export const predictWaitTimeService = async ({
   appointmentType,
   appointmentId,
 }) => {
-  //  Get historical metrics
+  // 1️⃣ Get historical metrics
   const metrics = await getAppointmentMetricsService(
     doctorId,
     clinicId,
@@ -22,7 +22,7 @@ export const predictWaitTimeService = async ({
     appointmentType,
   );
 
-  // Get live queue
+  // 2️⃣ Get live queue
   const queue = await getAppointmentQueueService(
     doctorId,
     clinicId,
@@ -34,7 +34,6 @@ export const predictWaitTimeService = async ({
   const { current, ahead, my_position } = queue;
 
   // ---------------- REGRESSION (OPTIONAL ENHANCEMENT) ----------------
-
   let effectiveAvgDuration = metrics.avg_duration;
   let regressionConfidence = null;
 
@@ -58,37 +57,32 @@ export const predictWaitTimeService = async ({
     }
   }
 
-  // Remaining time of current appointment
+  // ---------------- WAIT TIME CALCULATION ----------------
+
+  // Remaining time of current in-progress patient
   let remainingCurrent = 0;
   if (current && current.actual_start_time) {
     const elapsed =
       (Date.now() - new Date(current.actual_start_time).getTime()) / 60000;
 
-    // remainingCurrent = Math.max(metrics.avg_duration - elapsed, 0);
     remainingCurrent = Math.max(effectiveAvgDuration - elapsed, 0);
   }
 
-  // Time for patients ahead
+  // Time for patients truly waiting ahead (exclude current in-progress patient)
+  const waitingAhead = ahead.filter((p) => p.id !== current?.id);
   let aheadTime = 0;
 
-  ahead.forEach(() => {
-    // const adjustedDuration =
-    //   metrics.avg_duration * (1 - metrics.no_show_rate * 0.5);
+  waitingAhead.forEach(() => {
     const adjustedDuration =
       effectiveAvgDuration * (1 - metrics.no_show_rate * 0.5);
-
     aheadTime += adjustedDuration;
   });
 
-  // Final prediction
+  // Final predicted wait
   const predictedWait = remainingCurrent + aheadTime + metrics.avg_start_delay;
 
   // Confidence calculation
-  // let confidence = "LOW";
-  // if (metrics.sample_size > 30) confidence = "HIGH";
-  // else if (metrics.sample_size > 10) confidence = "MEDIUM";
   let confidence = "LOW";
-
   if (regressionConfidence) {
     confidence = regressionConfidence;
   } else if (metrics.sample_size > 30) {
@@ -103,7 +97,7 @@ export const predictWaitTimeService = async ({
     confidence,
     explanation: {
       remaining_current_minutes: Math.round(remainingCurrent),
-      patients_ahead: ahead.length,
+      patients_ahead: waitingAhead.length,
       avg_duration_used: Number(effectiveAvgDuration.toFixed(2)),
       base_avg_duration: metrics.avg_duration,
       avg_start_delay: metrics.avg_start_delay,
