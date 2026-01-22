@@ -27,6 +27,7 @@ export const predictWaitTimeService = async ({
     doctorId,
     clinicId,
     departmentId,
+    appointmentType,
     appointmentDate,
     appointmentId,
   );
@@ -41,6 +42,7 @@ export const predictWaitTimeService = async ({
     doctorId,
     clinicId,
     departmentId,
+    appointmentType,
   );
 
   const regressionModel = trainLinearRegression(trainingData);
@@ -89,6 +91,15 @@ export const predictWaitTimeService = async ({
     confidence = "HIGH";
   } else if (metrics.sample_size > 10) {
     confidence = "MEDIUM";
+  }
+
+  if (!my_position) {
+    return {
+      predicted_wait_minutes: 0,
+      my_position: null,
+      confidence: "LOW",
+      explanation: { reason: "Appointment not in queue" },
+    };
   }
 
   return {

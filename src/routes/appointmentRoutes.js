@@ -5,6 +5,7 @@ import {
   cancelAppointment,
   checkInAppointment,
   completeAppointment,
+  getAllAppointment,
   noShowAppointment,
   staffBookAppointment,
   startAppointment,
@@ -16,37 +17,38 @@ router.post(
   "/book",
   authenticate,
   authorizeModule("AM", "write"),
-  staffBookAppointment
+  staffBookAppointment,
 );
 router.put(
   "/check-in/:id",
   authenticate,
   authorizeModule("AM", "update"),
-  checkInAppointment
+  checkInAppointment,
 );
 router.put(
   "/start/:id",
   authenticate,
   authorizeModule("AM", "update"),
-  startAppointment
+  startAppointment,
 );
 router.put(
   "/complete/:id",
   authenticate,
   authorizeModule("AM", "update"),
-  completeAppointment
+  completeAppointment,
 );
 router.put(
   "/cancel/:id",
   authenticate,
   authorizeModule("AM", "update"),
-  cancelAppointment
+  cancelAppointment,
 );
 router.put(
   "/no-show/:id",
   authenticate,
   authorizeModule("AM", "update"),
-  noShowAppointment
+  noShowAppointment,
 );
+router.get("/", authenticate, authorizeModule("AM", "read"), getAllAppointment);
 
 export default router;

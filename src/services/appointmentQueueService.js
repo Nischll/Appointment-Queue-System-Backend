@@ -5,6 +5,7 @@ export const getAppointmentQueueService = async (
   doctorId,
   clinicId,
   departmentId,
+  appointmentType,
   appointmentDate,
   appointmentId = null,
 ) => {
@@ -16,6 +17,7 @@ export const getAppointmentQueueService = async (
     doctorId,
     clinicId,
     departmentId,
+    appointmentType,
     appointmentDate,
   );
 
@@ -27,6 +29,8 @@ export const getAppointmentQueueService = async (
       total_in_queue: 0,
     };
   }
+
+  queue.sort((a, b) => a.queue_number - b.queue_number);
 
   const current =
     queue.find((a) => a.status === APPOINTMENT_STATUS.In_progress) || null;

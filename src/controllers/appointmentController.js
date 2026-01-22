@@ -6,6 +6,7 @@ import {
   cancelAppointmentService,
   checkInAppointmentService,
   CompleteAppointmentService,
+  getAppointmentService,
   noShowAppointmentService,
   staffBookAppointmentService,
   startAppointmentService,
@@ -54,7 +55,7 @@ export const completeAppointment = async (req, res) => {
       res,
       200,
       "Appointment completed successfully",
-      data.id
+      data.id,
     );
   } catch (error) {
     console.log("error while completing appointment.", error);
@@ -82,6 +83,28 @@ export const noShowAppointment = async (req, res) => {
     return sendResponse(res, 200, "Appointment marked as no-show.", data.id);
   } catch (error) {
     console.log("error marking no-show appointment.", error);
+    return sendResponse(res, error.statusCode || 500, error.message, null);
+  }
+};
+
+export const getAllAppointment = async (req, res) => {
+  try {
+    const { doctor_id, clinic_id, department_id, date } = req.query;
+
+    const data = await getAppointmentService(
+      parseInt(doctor_id),
+      parseInt(clinic_id),
+      parseInt(department_id),
+      date,
+    );
+    return sendResponse(
+      res,
+      200,
+      "Appointments fetched with waiting time",
+      data,
+    );
+  } catch (error) {
+    console.log("error fetching appointments.", error);
     return sendResponse(res, error.statusCode || 500, error.message, null);
   }
 };

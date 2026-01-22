@@ -1,5 +1,6 @@
 import pool from "../config/db.js";
 import APPOINTMENT_STATUS from "../enums/appointmentStatus.enum.js";
+import { mapAppointmentWithPrediction } from "../mappers/appointmentMapper.js";
 import {
   assignQueueNumberQuery,
   cancelAppointmentQuery,
@@ -8,10 +9,12 @@ import {
   checkDuplicateAppointmentQuery,
   checkInAppointmentQuery,
   completeAppointmentQuery,
+  getAppointmentQuery,
   insertAppointmentQuery,
   noShowAppointmentQuery,
   startAppointmentQuery,
 } from "../models/appointmentModel.js";
+import { predictWaitTimeService } from "./predictWaitTimeService.js";
 
 const APPOINTMENT_DURATION = {
   COUNSELLING: 30,
@@ -29,7 +32,7 @@ export const staffBookAppointmentService = async (staffId, data) => {
 
     if (existing) {
       throw new Error(
-        "Patient already has an active appointment with this doctor on this date"
+        "Patient already has an active appointment with this doctor on this date",
       );
     }
 
@@ -46,7 +49,7 @@ export const staffBookAppointmentService = async (staffId, data) => {
       staffId,
       data,
       queueNumber,
-      estimatedDuration
+      estimatedDuration,
     );
 
     await client.query("COMMIT");
@@ -97,7 +100,7 @@ export const startAppointmentService = async (appointmentId) => {
 
     const existAppointment = await checkAppointmentExistsQuery(
       client,
-      appointmentId
+      appointmentId,
     );
 
     if (!existAppointment) {
@@ -136,7 +139,7 @@ export const CompleteAppointmentService = async (appointmentId) => {
 
     const existAppointment = await checkAppointmentExistsQuery(
       client,
-      appointmentId
+      appointmentId,
     );
 
     if (!existAppointment) {
@@ -165,7 +168,7 @@ export const CompleteAppointmentService = async (appointmentId) => {
 export const cancelAppointmentService = async (
   appointmentId,
   staffId,
-  data
+  data,
 ) => {
   if (!appointmentId) throw new Error("Appointment not found.");
 
@@ -178,7 +181,7 @@ export const cancelAppointmentService = async (
 
     const existAppointment = await checkAppointmentExistsQuery(
       client,
-      appointmentId
+      appointmentId,
     );
 
     if (!existAppointment) {
@@ -188,11 +191,11 @@ export const cancelAppointmentService = async (
     const status = existAppointment.status;
     if (
       ![APPOINTMENT_STATUS.Booked, APPOINTMENT_STATUS.Checked_In].includes(
-        status
+        status,
       )
     ) {
       throw new Error(
-        "Cannot cancel a completed or already cancelled appointment."
+        "Cannot cancel a completed or already cancelled appointment.",
       );
     }
 
@@ -200,7 +203,7 @@ export const cancelAppointmentService = async (
       client,
       appointmentId,
       staffId,
-      reason
+      reason,
     );
 
     await client.query("COMMIT");
@@ -224,7 +227,7 @@ export const noShowAppointmentService = async (appointmentId) => {
 
     const existAppointment = await checkAppointmentExistsQuery(
       client,
-      appointmentId
+      appointmentId,
     );
 
     if (!existAppointment) {
@@ -234,7 +237,7 @@ export const noShowAppointmentService = async (appointmentId) => {
     const status = existAppointment.status;
     if (![APPOINTMENT_STATUS.Booked].includes(status)) {
       throw new Error(
-        "Cannot mark no-show for completed or cancelled appointment."
+        "Cannot mark no-show for completed or cancelled appointment.",
       );
     }
 
@@ -249,4 +252,51 @@ export const noShowAppointmentService = async (appointmentId) => {
   } finally {
     client.release();
   }
+};
+
+export const getAppointmentService = async (
+  doctorId,
+  clinicId,
+  departmentId,
+  appointmentDate,
+) => {
+  if (!doctorId || !clinicId || !departmentId || !appointmentDate) {
+    throw new Error("Missing required parameters.");
+  }
+
+  const appointments = await getAppointmentQuery(
+    doctorId,
+    clinicId,
+    departmentId,
+    appointmentDate,
+  );
+
+  const appointmentsWithWaitingTime = [];
+
+  for (const appt of appointments) {
+    let prediction = null;
+
+    if (
+      appt.status === APPOINTMENT_STATUS.Checked_In ||
+      appt.status === APPOINTMENT_STATUS.Booked
+    ) {
+      const result = await predictWaitTimeService({
+        doctorId,
+        clinicId,
+        departmentId,
+        appointmentDate,
+        appointmentType: appt.appointment_type,
+        appointmentId: appt.id,
+      });
+
+      // 👇 FIX: extract from result.data
+      prediction = result;
+    }
+
+    appointmentsWithWaitingTime.push(
+      mapAppointmentWithPrediction(appt, prediction),
+    );
+  }
+
+  return appointmentsWithWaitingTime;
 };

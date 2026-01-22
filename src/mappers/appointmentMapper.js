@@ -1,0 +1,44 @@
+import APPOINTMENT_STATUS from "../enums/appointmentStatus.enum.js";
+import { formatTimeToAMPM } from "../helper/formatTimeToAMPM.js";
+
+export const mapAppointmentWithPrediction = (appt, prediction) => {
+  return {
+    appointment: {
+      id: appt.id,
+      patient_id: appt.patient_id,
+      patient_name: appt.patient_name,
+      queue_number: appt.queue_number,
+      status: appt.status,
+      notes: appt.notes,
+      created_by: appt.created_by,
+      appointment_created_by: appt.appointment_created_by,
+      cancelled_by: appt.cancelled_by,
+      appointment_cancelled_by: appt.appointment_cancelled_by,
+      cancellation_reason: appt.cancellation_reason,
+      appointment_type: appt.appointment_type,
+      appointment_date: appt.appointment_date,
+      scheduled_start_time: formatTimeToAMPM(appt.scheduled_start_time),
+      is_walk_in: appt.is_walk_in,
+      checked_in_time: formatTimeToAMPM(appt.checked_in_time),
+      actual_start_time: formatTimeToAMPM(appt.actual_start_time),
+      actual_end_time: formatTimeToAMPM(appt.actual_end_time),
+    },
+
+    prediction:
+      appt.status === APPOINTMENT_STATUS.In_progress
+        ? {
+            predicted_wait_minutes: 0,
+            confidence: "HIGH",
+            my_position: 0,
+            explanation: null,
+          }
+        : prediction
+          ? {
+              predicted_wait_minutes: prediction.predicted_wait_minutes,
+              confidence: prediction.confidence,
+              my_position: prediction.my_position,
+              explanation: prediction.explanation,
+            }
+          : null,
+  };
+};

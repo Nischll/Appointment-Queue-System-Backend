@@ -5,6 +5,7 @@ export const getRegressionTrainingDataQuery = async (
   doctorId,
   clinicId,
   departmentId,
+  appointmentType,
 ) => {
   const result = await pool.query(
     `
@@ -15,11 +16,19 @@ export const getRegressionTrainingDataQuery = async (
     WHERE doctor_id = $1
       AND clinic_id = $2
       AND department_id = $3
-      AND status = $4
+      AND appointment_type = $4
+      AND status = $5
       AND actual_start_time IS NOT NULL
       AND actual_end_time IS NOT NULL
+      AND actual_end_time > actual_start_time
     `,
-    [doctorId, clinicId, departmentId, APPOINTMENT_STATUS.Completed],
+    [
+      doctorId,
+      clinicId,
+      departmentId,
+      appointmentType,
+      APPOINTMENT_STATUS.Completed,
+    ],
   );
 
   return result.rows;
