@@ -413,3 +413,82 @@ export const getAppointmentHistoryQuery = async ({
     total,
   };
 };
+
+export const getNextQueueNumberQuery = async (
+  client,
+  doctorId,
+  appointmentDate,
+  clinicId,
+  departmentId,
+) => {
+  const result = await client.query(
+    `
+    SELECT COALESCE(MAX(queue_number), 0) + 1 AS next_queue
+    FROM appointments
+    WHERE doctor_id = $1
+      AND appointment_date = $2
+      AND clinic_id = $3
+      AND department_id = $4
+    `,
+    [doctorId, appointmentDate, clinicId, departmentId],
+  );
+
+  return parseInt(result.rows[0].next_queue, 10);
+};
+
+export const updateAppointmentQuery = async (client, appointmentId, data) => {
+  const {
+    patient_id,
+    doctor_id,
+    clinic_id,
+    department_id,
+    appointment_type,
+    scheduled_start_time,
+    estimated_duration,
+    notes,
+    is_walk_in,
+    queue_number, 
+  } = data;
+
+  const fields = [];
+  const values = [];
+  let idx = 1;
+
+  const add = (col, val) => {
+    if (val !== undefined) {
+      fields.push(`${col} = $${idx++}`);
+      values.push(val);
+    }
+  };
+
+  add("patient_id", patient_id);
+  add("doctor_id", doctor_id);
+  add("clinic_id", clinic_id);
+  add("department_id", department_id);
+  add("appointment_type", appointment_type);
+  add("scheduled_start_time", scheduled_start_time);
+  add("estimated_duration", estimated_duration);
+  add("notes", notes);
+  add("is_walk_in", is_walk_in);
+  add("queue_number", queue_number); 
+
+  if (!fields.length) throw new Error("No fields provided to update.");
+
+  const result = await client.query(
+    `
+    UPDATE appointments
+    SET
+      ${fields.join(", ")},
+      updated_at = NOW()
+    WHERE id = $${idx}  
+    RETURNING *
+    `,
+    [...values, appointmentId],
+  );
+
+  if (!result.rows.length) {
+    throw new Error("Appointment not found or not editable.");
+  }
+
+  return result.rows[0];
+};

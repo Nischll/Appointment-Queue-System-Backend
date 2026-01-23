@@ -14,9 +14,11 @@ import {
   completeAppointmentQuery,
   getAppointmentHistoryQuery,
   getLiveAppointmentQuery,
+  getNextQueueNumberQuery,
   insertAppointmentQuery,
   noShowAppointmentQuery,
   startAppointmentQuery,
+  updateAppointmentQuery,
 } from "../models/appointmentModel.js";
 import { predictWaitTimeService } from "./predictWaitTimeService.js";
 
@@ -347,4 +349,72 @@ export const getAppointmentHistoryService = async ({
       total_pages: Math.ceil(total / limit),
     },
   };
+};
+
+export const updateAppointmentService = async (appointmentId, data) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const existing = await checkAppointmentExistsQuery(client, appointmentId);
+
+    if (!existing) {
+      throw new Error("Appointment not found.");
+    }
+
+    // Ensure it's today's appointment
+    const dateCheck = await client.query(
+      `SELECT 1 
+       FROM appointments 
+       WHERE id = $1 
+         AND appointment_date = CURRENT_DATE`,
+      [appointmentId],
+    );
+
+    if (!dateCheck.rowCount) {
+      throw new Error("Only today's appointments can be updated.");
+    }
+
+    // Only editable statuses
+    if (
+      existing.status !== APPOINTMENT_STATUS.Booked &&
+      existing.status !== APPOINTMENT_STATUS.Checked_In
+    ) {
+      throw new Error(
+        "Only BOOKED and CHECKED IN appointments can be updated.",
+      );
+    }
+
+    const queueAffectingFieldsChanged =
+      (data.doctor_id && data.doctor_id !== existing.doctor_id) ||
+      (data.clinic_id && data.clinic_id !== existing.clinic_id) ||
+      (data.department_id && data.department_id !== existing.department_id);
+
+    if (queueAffectingFieldsChanged) {
+      const newDoctorId = data.doctor_id || existing.doctor_id;
+      const newClinicId = data.clinic_id || existing.clinic_id;
+      const newDepartmentId = data.department_id || existing.department_id;
+
+      const newQueueNumber = await getNextQueueNumberQuery(
+        client,
+        newDoctorId,
+        existing.appointment_date,
+        newClinicId,
+        newDepartmentId,
+      );
+
+      data.queue_number = newQueueNumber;
+    }
+
+    const updated = await updateAppointmentQuery(client, appointmentId, data);
+
+    await client.query("COMMIT");
+    return updated;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
 };

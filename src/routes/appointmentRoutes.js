@@ -10,6 +10,7 @@ import {
   staffBookAppointment,
   startAppointment,
   getAppointmentHistory,
+  updateAppointment,
 } from "../controllers/appointmentController.js";
 
 const router = express.Router();
@@ -51,7 +52,7 @@ router.put(
   noShowAppointment,
 );
 router.get(
-  "/",
+  "/live",
   authenticate,
   authorizeModule("AM", "read"),
   todayAppointmentsWithWaitingTime,
@@ -61,6 +62,12 @@ router.get(
   authenticate,
   authorizeModule("AM", "read"),
   getAppointmentHistory,
+);
+router.put(
+  "/update/:id",
+  authenticate,
+  authorizeModule("AM", "update"),
+  updateAppointment,
 );
 
 export default router;

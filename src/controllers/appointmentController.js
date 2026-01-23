@@ -11,6 +11,7 @@ import {
   staffBookAppointmentService,
   startAppointmentService,
   getAppointmentHistoryService,
+  updateAppointmentService,
 } from "../services/appointmentService.js";
 import { sendResponse } from "../utils/response.js";
 
@@ -139,6 +140,31 @@ export const getAppointmentHistory = async (req, res) => {
     return sendResponse(res, 200, "Appointments fetched successfully.", data);
   } catch (error) {
     console.log("error fetching appointments.", error);
+    return sendResponse(res, error.statusCode || 500, error.message, null);
+  }
+};
+
+export const updateAppointment = async (req, res) => {
+  try {
+    const appointmentId = parseInt(req.params.id, 10);
+
+    const data = {
+      patient_id: req.body.patient_id,
+      doctor_id: req.body.doctor_id,
+      clinic_id: req.body.clinic_id,
+      department_id: req.body.department_id,
+      appointment_type: req.body.appointment_type,
+      scheduled_start_time: req.body.scheduled_start_time,
+      // estimated_duration: req.body.estimated_duration,
+      notes: req.body.notes,
+      is_walk_in: req.body.is_walk_in,
+    };
+
+    const result = await updateAppointmentService(appointmentId, data);
+
+    return sendResponse(res, 200, "Appointment updated successfully.", result.id);
+  } catch (error) {
+    console.error("error updating appointment.", error);
     return sendResponse(res, error.statusCode || 500, error.message, null);
   }
 };
