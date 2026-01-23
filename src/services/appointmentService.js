@@ -1,6 +1,9 @@
 import pool from "../config/db.js";
 import APPOINTMENT_STATUS from "../enums/appointmentStatus.enum.js";
-import { mapAppointmentWithPrediction } from "../mappers/appointmentMapper.js";
+import {
+  mapAppointmentHistory,
+  mapAppointmentWithPrediction,
+} from "../mappers/appointmentMapper.js";
 import {
   assignQueueNumberQuery,
   cancelAppointmentQuery,
@@ -9,7 +12,8 @@ import {
   checkDuplicateAppointmentQuery,
   checkInAppointmentQuery,
   completeAppointmentQuery,
-  getAppointmentQuery,
+  getAppointmentHistoryQuery,
+  getLiveAppointmentQuery,
   insertAppointmentQuery,
   noShowAppointmentQuery,
   startAppointmentQuery,
@@ -254,17 +258,18 @@ export const noShowAppointmentService = async (appointmentId) => {
   }
 };
 
-export const getAppointmentService = async (
+export const getLiveAppointmentService = async (
   doctorId,
   clinicId,
   departmentId,
-  appointmentDate,
 ) => {
-  if (!doctorId || !clinicId || !departmentId || !appointmentDate) {
+  if (!doctorId || !clinicId || !departmentId) {
     throw new Error("Missing required parameters.");
   }
 
-  const appointments = await getAppointmentQuery(
+  const appointmentDate = new Date().toISOString().slice(0, 10);
+
+  const appointments = await getLiveAppointmentQuery(
     doctorId,
     clinicId,
     departmentId,
@@ -299,4 +304,47 @@ export const getAppointmentService = async (
   }
 
   return appointmentsWithWaitingTime;
+};
+
+export const getAppointmentHistoryService = async ({
+  date_from,
+  date_to,
+  doctor_id,
+  clinic_id,
+  department_id,
+  appointment_type,
+  patient_name,
+  status,
+  page,
+  limit,
+}) => {
+  if (!date_from || !date_to) {
+    throw new Error("Date range is required.");
+  }
+  const offset = (page - 1) * limit;
+  const { rows, total } = await getAppointmentHistoryQuery({
+    date_from,
+    date_to,
+    doctor_id,
+    clinic_id,
+    department_id,
+    appointment_type,
+    patient_name,
+    status,
+    page,
+    limit,
+    offset,
+  });
+
+  const mapped = rows.map(mapAppointmentHistory);
+
+  return {
+    data: mapped,
+    pagination: {
+      page,
+      limit,
+      total,
+      total_pages: Math.ceil(total / limit),
+    },
+  };
 };

@@ -42,3 +42,41 @@ export const mapAppointmentWithPrediction = (appt, prediction) => {
           : null,
   };
 };
+
+export const mapAppointmentHistory = (appt) => {
+  return {
+    id: appt.id,
+    patient_id: appt.patient_id,
+    patient_name: appt.patient_name,
+
+    clinic_id: appt.clinic_id,
+    clinic_name: appt.clinic_name,
+
+    department_id: appt.department_id,
+    department_name: appt.department_name,
+
+    doctor_id: appt.doctor_id,
+    doctor_name: appt.doctor_name,
+
+    queue_number: appt.queue_number,
+    status: appt.status,
+    notes: appt.notes,
+
+    appointment_created_by_id: appt.created_by,
+    appointment_created_by_name: appt.created_by_name,
+
+    cancelled_by_id: appt.cancelled_by,
+    cancelled_by_name: appt.cancelled_by_name,
+
+    cancellation_reason: appt.cancellation_reason,
+    appointment_type: appt.appointment_type,
+    appointment_date: appt.appointment_date,
+
+    scheduled_start_time: formatTimeToAMPM(appt.scheduled_start_time),
+    checked_in_time: formatTimeToAMPM(appt.checked_in_time),
+    actual_start_time: formatTimeToAMPM(appt.actual_start_time),
+    actual_end_time: formatTimeToAMPM(appt.actual_end_time),
+
+    is_walk_in: appt.is_walk_in,
+  };
+};

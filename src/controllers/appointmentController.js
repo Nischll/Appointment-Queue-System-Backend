@@ -6,10 +6,11 @@ import {
   cancelAppointmentService,
   checkInAppointmentService,
   CompleteAppointmentService,
-  getAppointmentService,
+  getLiveAppointmentService,
   noShowAppointmentService,
   staffBookAppointmentService,
   startAppointmentService,
+  getAppointmentHistoryService,
 } from "../services/appointmentService.js";
 import { sendResponse } from "../utils/response.js";
 
@@ -87,15 +88,14 @@ export const noShowAppointment = async (req, res) => {
   }
 };
 
-export const getAllAppointment = async (req, res) => {
+export const todayAppointmentsWithWaitingTime = async (req, res) => {
   try {
-    const { doctor_id, clinic_id, department_id, date } = req.query;
+    const { doctor_id, clinic_id, department_id } = req.query;
 
-    const data = await getAppointmentService(
+    const data = await getLiveAppointmentService(
       parseInt(doctor_id),
       parseInt(clinic_id),
       parseInt(department_id),
-      date,
     );
     return sendResponse(
       res,
@@ -103,6 +103,40 @@ export const getAllAppointment = async (req, res) => {
       "Appointments fetched with waiting time",
       data,
     );
+  } catch (error) {
+    console.log("error fetching appointments.", error);
+    return sendResponse(res, error.statusCode || 500, error.message, null);
+  }
+};
+
+export const getAppointmentHistory = async (req, res) => {
+  try {
+    const {
+      date_from,
+      date_to,
+      doctor_id,
+      clinic_id,
+      department_id,
+      appointment_type,
+      patient_name,
+      status,
+      page,
+      limit,
+    } = req.query;
+
+    const data = await getAppointmentHistoryService({
+      date_from,
+      date_to,
+      doctor_id: doctor_id ? parseInt(doctor_id) : null,
+      clinic_id: clinic_id ? parseInt(clinic_id) : null,
+      department_id: department_id ? parseInt(department_id) : null,
+      appointment_type: appointment_type || null,
+      patient_name: patient_name || null,
+      status: status || null,
+      page: parseInt(page),
+      limit: parseInt(limit),
+    });
+    return sendResponse(res, 200, "Appointments fetched successfully.", data);
   } catch (error) {
     console.log("error fetching appointments.", error);
     return sendResponse(res, error.statusCode || 500, error.message, null);

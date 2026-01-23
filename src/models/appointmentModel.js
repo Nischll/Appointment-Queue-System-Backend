@@ -261,7 +261,7 @@ export const noShowAppointmentQuery = async (client, appointmentId) => {
   return result.rows[0];
 };
 
-export const getAppointmentQuery = async (
+export const getLiveAppointmentQuery = async (
   doctorId,
   clinicId,
   departmentId,
@@ -302,4 +302,114 @@ export const getAppointmentQuery = async (
   );
 
   return result.rows;
+};
+
+export const getAppointmentHistoryQuery = async ({
+  date_from,
+  date_to,
+  doctor_id,
+  clinic_id,
+  department_id,
+  appointment_type,
+  patient_name,
+  status,
+  limit,
+  offset,
+}) => {
+  const values = [];
+  let whereClause = `
+    WHERE a.appointment_date BETWEEN $1 AND $2
+      AND a.appointment_date < CURRENT_DATE
+  `;
+  values.push(date_from, date_to);
+
+  let idx = 3;
+
+  if (doctor_id) {
+    whereClause += ` AND a.doctor_id = $${idx++}`;
+    values.push(doctor_id);
+  }
+
+  if (clinic_id) {
+    whereClause += ` AND a.clinic_id = $${idx++}`;
+    values.push(clinic_id);
+  }
+
+  if (department_id) {
+    whereClause += ` AND a.department_id = $${idx++}`;
+    values.push(department_id);
+  }
+
+  if (appointment_type) {
+    whereClause += ` AND a.appointment_type = $${idx++}`;
+    values.push(appointment_type);
+  }
+
+  if (status) {
+    whereClause += ` AND a.status = $${idx++}`;
+    values.push(status);
+  }
+
+  if (patient_name) {
+    whereClause += ` AND u.full_name ILIKE $${idx++}`;
+    values.push(`%${patient_name}%`);
+  }
+
+  const countResult = await pool.query(
+    `
+    SELECT COUNT(*) AS total
+    FROM appointments a
+    JOIN users u ON u.id = a.patient_id
+    ${whereClause}
+    `,
+    values,
+  );
+
+  const total = parseInt(countResult.rows[0].total, 10);
+
+  const result = await pool.query(
+    `
+    SELECT
+      a.id,
+      a.patient_id,
+      u.full_name AS patient_name,
+      a.clinic_id,
+      cl.name AS clinic_name,
+      a.department_id,
+      de.name AS department_name,
+      a.doctor_id,
+      d.name AS doctor_name,
+      a.queue_number,
+      a.status,
+      a.notes,
+      a.created_by,
+      c.full_name AS created_by_name,
+      a.cancelled_by,
+      x.full_name AS cancelled_by_name,
+      a.cancellation_reason,
+      a.appointment_type,
+      TO_CHAR(a.appointment_date, 'YYYY-MM-DD') AS appointment_date,
+      a.scheduled_start_time,
+      a.is_walk_in,
+      a.checked_in_time,
+      a.actual_start_time,
+      a.actual_end_time
+    FROM appointments a
+    JOIN users u ON u.id = a.patient_id
+    LEFT JOIN users c ON c.id = a.created_by
+    LEFT JOIN users x ON x.id = a.cancelled_by
+    LEFT JOIN clinics cl ON cl.id = a.clinic_id
+    LEFT JOIN departments de ON de.id = a.department_id
+    LEFT JOIN doctors d ON d.id = a.doctor_id
+    ${whereClause}
+    ORDER BY a.appointment_date DESC, a.queue_number ASC
+    LIMIT $${idx} OFFSET $${idx + 1}  
+    `,
+    [...values, limit, offset],
+  );
+
+  return {
+    rows: result.rows,
+    total,
+  };
 };
