@@ -265,7 +265,7 @@ export const getLiveAppointmentService = async (
   clinicId,
   departmentId,
 ) => {
-  if (!doctorId || !clinicId || !departmentId) {
+  if (!clinicId || !departmentId) {
     throw new Error("Missing required parameters.");
   }
 
@@ -288,7 +288,7 @@ export const getLiveAppointmentService = async (
       appt.status === APPOINTMENT_STATUS.Booked
     ) {
       const result = await predictWaitTimeService({
-        doctorId,
+        doctorId: appt.doctor_id,
         clinicId,
         departmentId,
         appointmentDate,
@@ -296,7 +296,6 @@ export const getLiveAppointmentService = async (
         appointmentId: appt.id,
       });
 
-      // 👇 FIX: extract from result.data
       prediction = result;
     }
 

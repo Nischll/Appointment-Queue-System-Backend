@@ -267,6 +267,20 @@ export const getLiveAppointmentQuery = async (
   departmentId,
   appointmentDate,
 ) => {
+  const values = [clinicId, departmentId, appointmentDate];
+  let whereClause = `
+    WHERE a.clinic_id = $1
+      AND a.department_id = $2
+      AND a.appointment_date = $3
+  `;
+
+  let idx = 4;
+
+  if (doctorId) {
+    whereClause += ` AND a.doctor_id = $${idx++}`;
+    values.push(doctorId);
+  }
+
   const result = await pool.query(
     `
     SELECT 
@@ -287,18 +301,16 @@ export const getLiveAppointmentQuery = async (
       a.is_walk_in,
       a.checked_in_time,
       a.actual_start_time,
-      a.actual_end_time
+      a.actual_end_time,
+      a.doctor_id             
     FROM appointments a
     JOIN users u ON u.id = a.patient_id
     LEFT JOIN users c ON c.id = a.created_by
     LEFT JOIN users x ON x.id = a.cancelled_by
-    WHERE a.doctor_id = $1
-      AND a.clinic_id = $2
-      AND a.department_id = $3
-      AND a.appointment_date = $4
-    ORDER BY a.queue_number ASC
+    ${whereClause}
+    ORDER BY a.doctor_id ASC, a.queue_number ASC
     `,
-    [doctorId, clinicId, departmentId, appointmentDate],
+    values,
   );
 
   return result.rows;
@@ -447,7 +459,7 @@ export const updateAppointmentQuery = async (client, appointmentId, data) => {
     estimated_duration,
     notes,
     is_walk_in,
-    queue_number, 
+    queue_number,
   } = data;
 
   const fields = [];
@@ -470,7 +482,7 @@ export const updateAppointmentQuery = async (client, appointmentId, data) => {
   add("estimated_duration", estimated_duration);
   add("notes", notes);
   add("is_walk_in", is_walk_in);
-  add("queue_number", queue_number); 
+  add("queue_number", queue_number);
 
   if (!fields.length) throw new Error("No fields provided to update.");
 
