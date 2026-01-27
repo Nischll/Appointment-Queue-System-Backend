@@ -27,7 +27,7 @@ export const predictWaitTimeService = async ({
     doctorId,
     clinicId,
     departmentId,
-    appointmentType,
+    // appointmentType,
     appointmentDate,
     appointmentId,
   );
@@ -58,32 +58,51 @@ export const predictWaitTimeService = async ({
       regressionConfidence = trainingData.length >= 30 ? "HIGH" : "MEDIUM";
     }
   }
-
   // ---------------- WAIT TIME CALCULATION ----------------
 
-  // Remaining time of current in-progress patient
-  let remainingCurrent = 0;
-  if (current && current.actual_start_time) {
-    const elapsed =
+  // STEP C — Remaining time of current in-progress patient
+  let remainingCurrentMinutes = 0;
+
+  if (
+    current &&
+    current.status === "IN_PROGRESS" &&
+    current.actual_start_time
+  ) {
+    const est = current.estimated_duration || metrics.avg_duration;
+    const elapsedMinutes =
       (Date.now() - new Date(current.actual_start_time).getTime()) / 60000;
 
-    remainingCurrent = Math.max(effectiveAvgDuration - elapsed, 0);
+    remainingCurrentMinutes = Math.max(0, Math.round(est - elapsedMinutes));
   }
 
-  // Time for patients truly waiting ahead (exclude current in-progress patient)
+  // STEP D — Time for patients truly waiting ahead (exclude current)
+  // STEP D — Time for patients truly waiting ahead (exclude current)
   const waitingAhead = ahead.filter((p) => p.id !== current?.id);
+
   let aheadTime = 0;
 
-  waitingAhead.forEach(() => {
-    const adjustedDuration =
-      effectiveAvgDuration * (1 - metrics.no_show_rate * 0.5);
-    aheadTime += adjustedDuration;
-  });
+  for (const p of waitingAhead) {
+    // use THEIR type, not mine
+    const m = await getAppointmentMetricsService(
+      doctorId,
+      clinicId,
+      departmentId,
+      p.appointment_type,
+    );
 
-  // Final predicted wait
-  const predictedWait = remainingCurrent + aheadTime + metrics.avg_start_delay;
+    const base = p.estimated_duration || m.avg_duration || metrics.avg_duration;
 
-  // Confidence calculation
+    const adjusted =
+      base * (1 - (m.no_show_rate ?? metrics.no_show_rate) * 0.5);
+
+    aheadTime += adjusted;
+  }
+
+  // Final predicted wait (NO double counting)
+  const predictedWait =
+    remainingCurrentMinutes + aheadTime + metrics.avg_start_delay;
+
+  // Confidence calculation (unchanged)
   let confidence = "LOW";
   if (regressionConfidence) {
     confidence = regressionConfidence;
@@ -93,12 +112,12 @@ export const predictWaitTimeService = async ({
     confidence = "MEDIUM";
   }
 
-  if (!my_position) {
+  if (!my_position || my_position === 0) {
     return {
       predicted_wait_minutes: 0,
-      my_position: null,
-      confidence: "LOW",
-      explanation: { reason: "Appointment not in queue" },
+      my_position,
+      confidence: "HIGH",
+      explanation: null,
     };
   }
 
@@ -107,7 +126,7 @@ export const predictWaitTimeService = async ({
     my_position,
     confidence,
     explanation: {
-      remaining_current_minutes: Math.round(remainingCurrent),
+      remaining_current_minutes: remainingCurrentMinutes,
       patients_ahead: waitingAhead.length,
       avg_duration_used: Number(effectiveAvgDuration.toFixed(2)),
       base_avg_duration: metrics.avg_duration,

@@ -28,7 +28,7 @@ export const getAppointmentMetricsService = async (
   const sampleSize = parseInt(metrics.total_appointments, 10);
   const avgDuration =
     Number(metrics.avg_duration_minutes) || DEFAULT_DURATIONS[appointmentType];
-  const avgStartDelay = Number(metrics.avg_start_delay_minutes) || 0;
+  const avgStartDelay = Number(metrics.avg_delay_minutes) || 0;
   const noShowRate = Number(metrics.no_show_rate) || 0;
 
   return {

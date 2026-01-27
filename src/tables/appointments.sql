@@ -3,33 +3,36 @@ CREATE TABLE IF NOT EXISTS appointments (
 
     -- Relations (CRITICAL for prediction scope)
     patient_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    doctor_id INT NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
     clinic_id INT NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
-    department_id INT NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+    department_id INT REFERENCES departments(id) ON DELETE CASCADE,
+    doctor_id INT REFERENCES doctors(id) ON DELETE CASCADE,
     created_by INT REFERENCES users(id) ON DELETE CASCADE,
+    approved_by INT REFERENCES users(id) ON DELETE CASCADE,
     cancelled_by INT REFERENCES users(id) ON DELETE CASCADE,
 
+    -- Status lifecycle
+    status appointment_status NOT NULL DEFAULT 'BOOKED',
+
     -- Appointment classification
-    appointment_type apppointment_type NOT NULL,
+    appointment_type apppointment_type,
     
     -- Scheduling
     appointment_date DATE NOT NULL,
-    scheduled_start_time TIME NOT NULL,
+    preferred_time appointment_time,
+    scheduled_start_time TIME ,
 
     -- Queue management
-    queue_number INT NOT NULL,
+    queue_number INT,
     is_walk_in BOOLEAN DEFAULT FALSE,
 
     -- Prediction engine inputs
-    estimated_duration INT NOT NULL, -- minutes (initial estimate)
+    estimated_duration INT, -- minutes (initial estimate)
 
     -- Real execution times (THE MOST IMPORTANT PART)
     checked_in_time TIMESTAMP,
     actual_start_time TIMESTAMP,
     actual_end_time TIMESTAMP,
 
-    -- Status lifecycle
-    status appointment_status NOT NULL DEFAULT 'BOOKED',
 
     -- Meta
     notes TEXT,

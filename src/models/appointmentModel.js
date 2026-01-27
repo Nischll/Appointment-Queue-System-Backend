@@ -1,5 +1,6 @@
 import pool from "../config/db.js";
 import APPOINTMENT_STATUS from "../enums/appointmentStatus.enum.js";
+import APPOINTMENT_TYPE from "../enums/appointmentType.enum.js";
 
 export const checkDuplicateAppointmentQuery = async (client, data) => {
   const { patient_id, clinic_id, department_id, doctor_id, appointment_date } =
@@ -267,14 +268,20 @@ export const getLiveAppointmentQuery = async (
   departmentId,
   appointmentDate,
 ) => {
-  const values = [clinicId, departmentId, appointmentDate];
+  const values = [
+    clinicId,
+    departmentId,
+    appointmentDate,
+    APPOINTMENT_STATUS.Requested,
+  ];
   let whereClause = `
     WHERE a.clinic_id = $1
       AND a.department_id = $2
       AND a.appointment_date = $3
+      AND a.status <> $4
   `;
 
-  let idx = 4;
+  let idx = 5;
 
   if (doctorId) {
     whereClause += ` AND a.doctor_id = $${idx++}`;
@@ -503,4 +510,223 @@ export const updateAppointmentQuery = async (client, appointmentId, data) => {
   }
 
   return result.rows[0];
+};
+
+// PATIENT
+export const checkDuplicatePatientRequestQuery = async (
+  client,
+  patientId,
+  clinicId,
+  preferredDate,
+) => {
+  const result = await client.query(
+    `
+    SELECT id
+    FROM appointments
+    WHERE patient_id = $1
+      AND clinic_id = $2
+      AND appointment_date = $3
+      AND status IN ($4, $5, $6)
+    LIMIT 1
+    `,
+    [
+      patientId,
+      clinicId,
+      preferredDate,
+      APPOINTMENT_STATUS.Requested,
+      APPOINTMENT_STATUS.Booked,
+      APPOINTMENT_STATUS.Checked_In,
+    ],
+  );
+
+  return result.rows[0];
+};
+
+export const addPatientAppoinmentQuery = async (client, patientId, dto) => {
+  const result = await client.query(
+    `
+    INSERT INTO appointments (
+      patient_id,
+      clinic_id,
+      department_id,
+      doctor_id,
+      appointment_type,
+      appointment_date,
+      status,
+      notes,
+      created_by,
+      preferred_time
+    )
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$1,$9)
+    RETURNING id
+    `,
+    [
+      patientId,
+      dto.clinic_id,
+      dto.department_id,
+      dto.doctor_id,
+      APPOINTMENT_TYPE.Counselling,
+      dto.preferred_date,
+      APPOINTMENT_STATUS.Requested,
+      dto.notes,
+      dto.preferred_time,
+    ],
+  );
+
+  return result.rows[0];
+};
+
+export const getPatientLiveAppointmentQuery = async (
+  patientId,
+  // clinicId,
+  // departmentId,
+  appointmentDate,
+) => {
+  const values = [
+    patientId,
+    // clinicId,
+    appointmentDate,
+    APPOINTMENT_STATUS.Cancelled,
+    APPOINTMENT_STATUS.No_Show,
+  ];
+
+  let whereClause = `
+    WHERE a.patient_id = $1
+      AND a.appointment_date = $2
+      AND a.status NOT IN ($3, $4)
+  `;
+
+  // let idx = 5;
+
+  // if (departmentId) {
+  //   whereClause += ` AND a.department_id = $${idx++}`;
+  //   values.push(departmentId);
+  // }
+
+  const result = await pool.query(
+    `
+    SELECT 
+      a.id,
+      a.patient_id,
+      u.full_name AS patient_name,
+      a.clinic_id,
+      cl.name AS clinic_name,
+      cl.address AS clinic_address,
+      a.department_id,
+      de.name AS department_name,
+      a.doctor_id,
+      d.name AS doctor_name,
+      a.queue_number,
+      a.status,
+      a.notes,
+      a.approved_by,
+      c.full_name AS appointment_approved_by,
+      a.cancelled_by,
+      x.full_name AS appointment_cancelled_by,
+      a.cancellation_reason,
+      a.appointment_type,
+      TO_CHAR(a.appointment_date, 'YYYY-MM-DD') AS appointment_date,
+      a.scheduled_start_time,
+      a.is_walk_in,
+      a.checked_in_time,
+      a.actual_start_time,
+      a.actual_end_time,
+      a.doctor_id,
+      a.clinic_id,
+      a.department_id
+    FROM appointments a
+    JOIN users u ON u.id = a.patient_id
+    LEFT JOIN users c ON c.id = a.approved_by
+    LEFT JOIN users x ON x.id = a.cancelled_by
+    LEFT JOIN clinics cl ON cl.id = a.clinic_id
+    LEFT JOIN departments de ON de.id = a.department_id
+    LEFT JOIN doctors d ON d.id = a.doctor_id
+    ${whereClause}
+    ORDER BY a.created_at ASC
+    `,
+    values,
+  );
+
+  return result.rows;
+};
+
+export const getPatientAppointmentHistoryQuery = async ({
+  patient_id,
+  date_from,
+  date_to,
+  status,
+  limit,
+  offset,
+}) => {
+  const values = [];
+  let whereClause = `
+    WHERE a.patient_id = $1
+      AND a.appointment_date BETWEEN $2 AND $3
+      AND a.appointment_date < CURRENT_DATE
+  `;
+
+  values.push(patient_id, date_from, date_to);
+  let idx = 4;
+
+  if (status) {
+    whereClause += ` AND a.status = $${idx++}`;
+    values.push(status);
+  }
+
+  const countResult = await pool.query(
+    `
+    SELECT COUNT(*) AS total
+    FROM appointments a
+    ${whereClause}
+    `,
+    values,
+  );
+
+  const total = parseInt(countResult.rows[0].total, 10);
+
+  const result = await pool.query(
+    `
+    SELECT
+      a.id,
+      a.patient_id,
+      u.full_name AS patient_name,
+      a.clinic_id,
+      cl.name AS clinic_name,
+      a.department_id,
+      de.name AS department_name,
+      a.doctor_id,
+      d.name AS doctor_name,
+      a.queue_number,
+      a.status,
+      a.notes,
+      a.created_by,
+      c.full_name AS created_by_name,
+      a.cancelled_by,
+      x.full_name AS cancelled_by_name,
+      a.cancellation_reason,
+      a.appointment_type,
+      TO_CHAR(a.appointment_date, 'YYYY-MM-DD') AS appointment_date,
+      a.scheduled_start_time,
+      a.is_walk_in,
+      a.checked_in_time,
+      a.actual_start_time,
+      a.actual_end_time
+    FROM appointments a
+    JOIN users u ON u.id = a.patient_id
+    LEFT JOIN users c ON c.id = a.created_by
+    LEFT JOIN users x ON x.id = a.cancelled_by
+    LEFT JOIN clinics cl ON cl.id = a.clinic_id
+    LEFT JOIN departments de ON de.id = a.department_id
+    LEFT JOIN doctors d ON d.id = a.doctor_id
+    ${whereClause}
+    ORDER BY a.appointment_date DESC, a.queue_number ASC
+    LIMIT $${idx} OFFSET $${idx + 1}
+    `,
+    [...values, limit, offset],
+  );
+
+  return {
+    rows: result.rows,
+    total,
+  };
 };

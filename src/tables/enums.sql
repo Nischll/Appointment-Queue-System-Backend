@@ -43,3 +43,17 @@ BEGIN
             'CANCELLED');
     END IF;
 END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type WHERE typname = 'appointment_time'
+    ) THEN
+        CREATE TYPE appointment_time AS ENUM (   
+            'MORNING',
+            'AFTERNOON',
+            'EVENING',
+            'ANY'
+            );
+    END IF;
+END $$;

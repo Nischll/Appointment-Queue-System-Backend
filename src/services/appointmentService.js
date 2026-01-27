@@ -3,18 +3,23 @@ import APPOINTMENT_STATUS from "../enums/appointmentStatus.enum.js";
 import {
   mapAppointmentHistory,
   mapAppointmentWithPrediction,
+  mapPatientAppointmentWithPrediction,
 } from "../mappers/appointmentMapper.js";
 import {
+  addPatientAppoinmentQuery,
   assignQueueNumberQuery,
   cancelAppointmentQuery,
   checkAppointmentExistsQuery,
   checkDoctorInProgressQuery,
   checkDuplicateAppointmentQuery,
+  checkDuplicatePatientRequestQuery,
   checkInAppointmentQuery,
   completeAppointmentQuery,
   getAppointmentHistoryQuery,
   getLiveAppointmentQuery,
   getNextQueueNumberQuery,
+  getPatientAppointmentHistoryQuery,
+  getPatientLiveAppointmentQuery,
   insertAppointmentQuery,
   noShowAppointmentQuery,
   startAppointmentQuery,
@@ -416,4 +421,122 @@ export const updateAppointmentService = async (appointmentId, data) => {
   } finally {
     client.release();
   }
+};
+
+// PATIENT
+export const patientBookAppointmentService = async (patientId, dto) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    if (!dto.clinic_id) throw new Error("Missing clinic fields");
+    if (!dto.notes) throw new Error("Missing notes fields");
+    if (!dto.preferred_date) throw new Error("Missing date fields");
+
+    if (new Date(dto.preferred_date) < new Date().setHours(0, 0, 0, 0)) {
+      throw new Error("Cannot book past dates");
+    }
+
+    const existing = await checkDuplicatePatientRequestQuery(
+      client,
+      patientId,
+      dto.clinic_id,
+      dto.preferred_date,
+    );
+
+    if (existing) {
+      throw new Error(
+        "You already have a pending or active appointment for this clinic on this date.",
+      );
+    }
+
+    const result = await addPatientAppoinmentQuery(client, patientId, dto);
+
+    await client.query("COMMIT");
+    return result;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+export const getPatientLiveAppointmentService = async (
+  patientId,
+  // clinicId,
+  // departmentId,
+) => {
+  const appointmentDate = new Date().toISOString().slice(0, 10);
+
+  const appointments = await getPatientLiveAppointmentQuery(
+    patientId,
+    // clinicId,
+    // departmentId,
+    appointmentDate,
+  );
+
+  const result = [];
+
+  for (const appt of appointments) {
+    let prediction = null;
+
+    // Only predict when it actually makes sense
+    if (
+      appt.status === APPOINTMENT_STATUS.Booked ||
+      appt.status === APPOINTMENT_STATUS.Checked_In
+    ) {
+      const predictionResult = await predictWaitTimeService({
+        doctorId: appt.doctor_id,
+        clinicId: appt.clinic_id,
+        departmentId: appt.department_id,
+        appointmentDate,
+        appointmentType: appt.appointment_type,
+        appointmentId: appt.id,
+      });
+
+      prediction = predictionResult;
+    }
+
+    result.push(mapPatientAppointmentWithPrediction(appt, prediction));
+  }
+
+  return result;
+};
+
+export const getPatientAppointmentHistoryService = async ({
+  patient_id,
+  date_from,
+  date_to,
+  status,
+  page,
+  limit,
+}) => {
+  if (!date_from || !date_to) {
+    throw new Error("Date range is required.");
+  }
+
+  const offset = (page - 1) * limit;
+
+  const { rows, total } = await getPatientAppointmentHistoryQuery({
+    patient_id,
+    date_from,
+    date_to,
+    status,
+    limit,
+    offset,
+  });
+
+  const mapped = rows.map(mapAppointmentHistory);
+
+  return {
+    data: mapped,
+    pagination: {
+      page,
+      limit,
+      total,
+      total_pages: Math.ceil(total / limit),
+    },
+  };
 };

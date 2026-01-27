@@ -2,6 +2,7 @@ import {
   CancelAPpointmentDto,
   StaffAppointmentDto,
 } from "../dto/appointmentDto.js";
+import { PatientAppointmentDto } from "../dto/patientAppointmentDto.js";
 import {
   cancelAppointmentService,
   checkInAppointmentService,
@@ -12,6 +13,9 @@ import {
   startAppointmentService,
   getAppointmentHistoryService,
   updateAppointmentService,
+  patientBookAppointmentService,
+  getPatientLiveAppointmentService,
+  getPatientAppointmentHistoryService,
 } from "../services/appointmentService.js";
 import { sendResponse } from "../utils/response.js";
 
@@ -162,9 +166,89 @@ export const updateAppointment = async (req, res) => {
 
     const result = await updateAppointmentService(appointmentId, data);
 
-    return sendResponse(res, 200, "Appointment updated successfully.", result.id);
+    return sendResponse(
+      res,
+      200,
+      "Appointment updated successfully.",
+      result.id,
+    );
   } catch (error) {
     console.error("error updating appointment.", error);
+    return sendResponse(res, error.statusCode || 500, error.message, null);
+  }
+};
+
+// PATIENT
+export const patientBookAppointment = async (req, res) => {
+  try {
+    const patientId = req.user.id;
+    const dto = new PatientAppointmentDto(req.body);
+
+    const data = await patientBookAppointmentService(patientId, dto);
+
+    return sendResponse(
+      res,
+      200,
+      "Appointment request submitted. Awaiting approval.",
+      data.id,
+    );
+  } catch (error) {
+    console.log("error patient booking", error);
+    return sendResponse(res, error.statusCode || 500, error.message, null);
+  }
+};
+
+export const getPatientLiveAppointments = async (req, res) => {
+  try {
+    const patientId = req.user.id;
+    // const { clinic_id, department_id } = req.query;
+
+    const data = await getPatientLiveAppointmentService(
+      patientId,
+      // parseInt(clinic_id),
+      // department_id ? parseInt(department_id) : null,
+    );
+
+    return sendResponse(
+      res,
+      200,
+      "Patient live appointments fetched successfully",
+      data,
+    );
+  } catch (error) {
+    console.log("error fetching patient live appointments.", error);
+    return sendResponse(res, error.statusCode || 500, error.message, null);
+  }
+};
+
+export const getPatientAppointmentHistory = async (req, res) => {
+  try {
+    const patientId = req.user.id;
+    const {
+      date_from,
+      date_to,
+      status,
+      page,
+      limit,
+    } = req.query;
+
+    const data = await getPatientAppointmentHistoryService({
+      patient_id: patientId,
+      date_from,
+      date_to,
+      status: status || null,
+      page: parseInt(page),
+      limit: parseInt(limit),
+    });
+
+    return sendResponse(
+      res,
+      200,
+      "Appointment history fetched successfully.",
+      data,
+    );
+  } catch (error) {
+    console.log("error fetching patient history.", error);
     return sendResponse(res, error.statusCode || 500, error.message, null);
   }
 };

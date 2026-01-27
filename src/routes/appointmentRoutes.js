@@ -11,7 +11,11 @@ import {
   startAppointment,
   getAppointmentHistory,
   updateAppointment,
+  patientBookAppointment,
+  getPatientLiveAppointments,
+  getPatientAppointmentHistory,
 } from "../controllers/appointmentController.js";
+import { requireExternalUser } from "../middleware/requireExternalUser.js";
 
 const router = express.Router();
 
@@ -68,6 +72,26 @@ router.put(
   authenticate,
   authorizeModule("AM", "update"),
   updateAppointment,
+);
+
+// PATIENT
+router.post(
+  "/patient/book",
+  authenticate,
+  requireExternalUser,
+  patientBookAppointment,
+);
+router.get(
+  "/patient/live",
+  authenticate,
+  requireExternalUser,
+  getPatientLiveAppointments,
+);
+router.get(
+  "/patient/history",
+  authenticate,
+  requireExternalUser,
+  getPatientAppointmentHistory,
 );
 
 export default router;

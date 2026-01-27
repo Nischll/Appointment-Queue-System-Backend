@@ -5,7 +5,7 @@ export const getAppointmentQueueService = async (
   doctorId,
   clinicId,
   departmentId,
-  appointmentType,
+  // appointmentType,
   appointmentDate,
   appointmentId = null,
 ) => {
@@ -17,7 +17,7 @@ export const getAppointmentQueueService = async (
     doctorId,
     clinicId,
     departmentId,
-    appointmentType,
+    // appointmentType,
     appointmentDate,
   );
 
