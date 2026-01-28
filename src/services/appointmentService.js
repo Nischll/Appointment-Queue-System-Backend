@@ -24,6 +24,7 @@ import {
   getPendingAppointmentsQuery,
   insertAppointmentQuery,
   noShowAppointmentQuery,
+  rejectAppointmentQuery,
   startAppointmentQuery,
   updateAppointmentQuery,
 } from "../models/appointmentModel.js";
@@ -516,6 +517,38 @@ export const approveAppointmentService = async (appointmentId, data) => {
 
     await client.query("COMMIT");
     return approved;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+export const rejectAppointmentService = async (appointmentId, data) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const existing = await checkAppointmentExistsQuery(client, appointmentId);
+
+    if (!existing) {
+      throw new Error("Appointment not found.");
+    }
+
+    if (existing.status !== APPOINTMENT_STATUS.Requested) {
+      throw new Error("Only REQUESTED appointments can be rejected.");
+    }
+
+    const rejected = await rejectAppointmentQuery(client, appointmentId, {
+      status: APPOINTMENT_STATUS.Rejected,
+      cancelled_by: data.cancelled_by,
+      cancellation_reason: data.cancellation_reason,
+    });
+
+    await client.query("COMMIT");
+    return rejected;
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;

@@ -660,6 +660,30 @@ export const approveAppointmentQuery = async (client, appointmentId, data) => {
   return result.rows[0];
 };
 
+export const rejectAppointmentQuery = async (client, appointmentId, data) => {
+  const { status, cancelled_by, cancellation_reason } = data;
+
+  const result = await client.query(
+    `
+    UPDATE appointments
+    SET
+      status = $1,
+      cancelled_by = $2,
+      cancellation_reason = $3,
+      updated_at = NOW()
+    WHERE id = $4
+    RETURNING *
+    `,
+    [status, cancelled_by, cancellation_reason, appointmentId],
+  );
+
+  if (!result.rows.length) {
+    throw new Error("Failed to reject appointment.");
+  }
+
+  return result.rows[0];
+};
+
 // PATIENT
 export const checkDuplicatePatientRequestQuery = async (
   client,

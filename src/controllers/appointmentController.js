@@ -18,6 +18,7 @@ import {
   getPatientAppointmentHistoryService,
   getPendingAppointmentsService,
   approveAppointmentService,
+  rejectAppointmentService,
 } from "../services/appointmentService.js";
 import { sendResponse } from "../utils/response.js";
 
@@ -243,6 +244,33 @@ export const approveAppointment = async (req, res) => {
     );
   } catch (error) {
     console.error("error approving appointment.", error);
+    return sendResponse(res, error.statusCode || 500, error.message, null);
+  }
+};
+
+export const rejectAppointment = async (req, res) => {
+  try {
+    const appointmentId = parseInt(req.params.id, 10);
+    const rejectedBy = req.user.id;
+    const { cancellation_reason } = req.body;
+
+    if (!cancellation_reason) {
+      return sendResponse(res, 400, "Cancellation reason is required.", null);
+    }
+
+    const result = await rejectAppointmentService(appointmentId, {
+      cancelled_by: rejectedBy,
+      cancellation_reason,
+    });
+
+    return sendResponse(
+      res,
+      200,
+      "Appointment rejected successfully.",
+      result.id,
+    );
+  } catch (error) {
+    console.error("error rejecting appointment.", error);
     return sendResponse(res, error.statusCode || 500, error.message, null);
   }
 };
