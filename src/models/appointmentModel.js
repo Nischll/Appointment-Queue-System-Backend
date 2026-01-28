@@ -512,6 +512,154 @@ export const updateAppointmentQuery = async (client, appointmentId, data) => {
   return result.rows[0];
 };
 
+export const getPendingAppointmentsQuery = async ({
+  clinic_id,
+  department_id,
+  doctor_id,
+  appointment_type,
+  patient_name,
+  date_from,
+  date_to,
+  limit,
+  offset,
+}) => {
+  const values = [];
+  let whereClause = `
+    WHERE a.status = 'REQUESTED'
+  `;
+  let idx = 1;
+
+  if (date_from && date_to) {
+    whereClause += ` AND a.appointment_date BETWEEN $${idx++} AND $${idx++}`;
+    values.push(date_from, date_to);
+  }
+
+  if (clinic_id) {
+    whereClause += ` AND a.clinic_id = $${idx++}`;
+    values.push(clinic_id);
+  }
+
+  if (department_id) {
+    whereClause += ` AND a.department_id = $${idx++}`;
+    values.push(department_id);
+  }
+
+  if (doctor_id) {
+    whereClause += ` AND a.doctor_id = $${idx++}`;
+    values.push(doctor_id);
+  }
+
+  if (appointment_type) {
+    whereClause += ` AND a.appointment_type = $${idx++}`;
+    values.push(appointment_type);
+  }
+
+  if (patient_name) {
+    whereClause += ` AND u.full_name ILIKE $${idx++}`;
+    values.push(`%${patient_name}%`);
+  }
+
+  const countResult = await pool.query(
+    `
+    SELECT COUNT(*) AS total
+    FROM appointments a
+    JOIN users u ON u.id = a.patient_id
+    ${whereClause}
+    `,
+    values,
+  );
+
+  const total = parseInt(countResult.rows[0].total, 10);
+
+  const result = await pool.query(
+    `
+    SELECT
+      a.id,
+      a.patient_id,
+      u.full_name AS patient_name,
+      a.clinic_id,
+      cl.name AS clinic_name,
+      a.department_id,
+      de.name AS department_name,
+      a.doctor_id,
+      d.name AS doctor_name,
+      a.status,
+      a.notes,
+      a.appointment_type,
+      TO_CHAR(a.appointment_date, 'YYYY-MM-DD') AS appointment_date,
+      a.preferred_time,
+      a.scheduled_start_time,
+      a.is_walk_in,
+      a.created_at
+    FROM appointments a
+    JOIN users u ON u.id = a.patient_id
+    LEFT JOIN clinics cl ON cl.id = a.clinic_id
+    LEFT JOIN departments de ON de.id = a.department_id
+    LEFT JOIN doctors d ON d.id = a.doctor_id
+    ${whereClause}
+    ORDER BY a.created_at ASC
+    LIMIT $${idx} OFFSET $${idx + 1}
+    `,
+    [...values, limit, offset],
+  );
+
+  return { rows: result.rows, total };
+};
+
+export const approveAppointmentQuery = async (client, appointmentId, data) => {
+  const {
+    doctor_id,
+    clinic_id,
+    department_id,
+    scheduled_start_time,
+    notes,
+    queue_number,
+    approved_by,
+    status,
+    estimated_duration,
+    appointment_type,
+  } = data;
+
+  const result = await client.query(
+    `
+    UPDATE appointments
+    SET
+      doctor_id = $1,
+      clinic_id = $2,
+      department_id = $3,
+      scheduled_start_time = $4,
+      notes = $5,
+      queue_number = $6,
+      status = $7,
+      approved_by = $8,
+      estimated_duration = $9,
+      appointment_type = $10,
+      updated_at = NOW()
+    WHERE id = $11
+    RETURNING *
+    `,
+    [
+      doctor_id,
+      clinic_id,
+      department_id,
+      scheduled_start_time,
+      notes,
+      queue_number,
+      status,
+      approved_by,
+      estimated_duration,
+      appointment_type,
+      appointmentId,
+    ],
+  );
+
+  if (!result.rows.length) {
+    throw new Error("Failed to approve appointment.");
+  }
+
+  return result.rows[0];
+};
+
 // PATIENT
 export const checkDuplicatePatientRequestQuery = async (
   client,

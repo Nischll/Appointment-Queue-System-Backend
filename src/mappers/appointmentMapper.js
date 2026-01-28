@@ -72,6 +72,7 @@ export const mapAppointmentHistory = (appt) => {
     appointment_type: appt.appointment_type,
     appointment_date: appt.appointment_date,
 
+    preferred_time: appt.preferred_time,
     scheduled_start_time: formatTimeToAMPM(appt.scheduled_start_time),
     checked_in_time: formatTimeToAMPM(appt.checked_in_time),
     actual_start_time: formatTimeToAMPM(appt.actual_start_time),

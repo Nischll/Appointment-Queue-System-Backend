@@ -7,6 +7,7 @@ import {
 } from "../mappers/appointmentMapper.js";
 import {
   addPatientAppoinmentQuery,
+  approveAppointmentQuery,
   assignQueueNumberQuery,
   cancelAppointmentQuery,
   checkAppointmentExistsQuery,
@@ -20,6 +21,7 @@ import {
   getNextQueueNumberQuery,
   getPatientAppointmentHistoryQuery,
   getPatientLiveAppointmentQuery,
+  getPendingAppointmentsQuery,
   insertAppointmentQuery,
   noShowAppointmentQuery,
   startAppointmentQuery,
@@ -415,6 +417,105 @@ export const updateAppointmentService = async (appointmentId, data) => {
 
     await client.query("COMMIT");
     return updated;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+export const getPendingAppointmentsService = async ({
+  clinic_id,
+  department_id,
+  doctor_id,
+  appointment_type,
+  patient_name,
+  date_from,
+  date_to,
+  page,
+  limit,
+}) => {
+  if (!date_from && !date_to) {
+    throw new Error("Date range is required");
+  }
+  if (!clinic_id) {
+    throw new Error("Clinic is required");
+  }
+  const offset = (page - 1) * limit;
+
+  const { rows, total } = await getPendingAppointmentsQuery({
+    clinic_id,
+    department_id,
+    doctor_id,
+    appointment_type,
+    patient_name,
+    date_from,
+    date_to,
+    limit,
+    offset,
+  });
+
+  const mapped = rows.map(mapAppointmentHistory);
+
+  return {
+    data: mapped,
+    pagination: {
+      page,
+      limit,
+      total,
+      total_pages: Math.ceil(total / limit),
+    },
+  };
+};
+
+export const approveAppointmentService = async (appointmentId, data) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const existing = await checkAppointmentExistsQuery(client, appointmentId);
+
+    if (!existing) {
+      throw new Error("Appointment not found.");
+    }
+
+    if (existing.status !== APPOINTMENT_STATUS.Requested) {
+      throw new Error("Only REQUESTED appointments can be approved.");
+    }
+
+    const doctorId = data.doctor_id || existing.doctor_id;
+    const clinicId = data.clinic_id || existing.clinic_id;
+    const departmentId = data.department_id || existing.department_id;
+    const appointment_type = data.appointment_type || existing.appointment_type;
+
+    if (!clinicId || !departmentId) {
+      throw new Error("Clinic and department are required for approval.");
+    }
+
+    const queueNumber = await getNextQueueNumberQuery(
+      client,
+      doctorId,
+      existing.appointment_date,
+      clinicId,
+      departmentId,
+      appointment_type,
+    );
+
+    const estimatedDuration = APPOINTMENT_DURATION[data.appointment_type];
+    if (!estimatedDuration) {
+      throw new Error("Invalid appointment type");
+    }
+    const approved = await approveAppointmentQuery(client, appointmentId, {
+      ...data,
+      queue_number: queueNumber,
+      status: APPOINTMENT_STATUS.Booked,
+      estimated_duration: estimatedDuration,
+    });
+
+    await client.query("COMMIT");
+    return approved;
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;

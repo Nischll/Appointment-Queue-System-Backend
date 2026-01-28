@@ -14,6 +14,8 @@ import {
   patientBookAppointment,
   getPatientLiveAppointments,
   getPatientAppointmentHistory,
+  getPendingAppointments,
+  approveAppointment,
 } from "../controllers/appointmentController.js";
 import { requireExternalUser } from "../middleware/requireExternalUser.js";
 
@@ -72,6 +74,18 @@ router.put(
   authenticate,
   authorizeModule("AM", "update"),
   updateAppointment,
+);
+router.get(
+  "/pending",
+  authenticate,
+  authorizeModule("AM", "read"),
+  getPendingAppointments,
+);
+router.post(
+  "/approve/:id",
+  authenticate,
+  authorizeModule("AM", "read"),
+  approveAppointment,
 );
 
 // PATIENT
