@@ -7,6 +7,8 @@ export const mapAppointmentWithPrediction = (appt, prediction) => {
       id: appt.id,
       patient_id: appt.patient_id,
       patient_name: appt.patient_name,
+      doctor_id: appt.doctor_id,
+      doctor_name: appt.doctor_name,
       queue_number: appt.queue_number,
       status: appt.status,
       notes: appt.notes,

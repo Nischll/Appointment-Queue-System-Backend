@@ -24,6 +24,80 @@ export const checkDuplicateAppointmentQuery = async (client, data) => {
   return result.rows[0];
 };
 
+export const checkDoctorAvailability = async (
+  client,
+  {
+    doctor_id,
+    clinic_id,
+    department_id,
+    appointment_date,
+    scheduled_start_time,
+    estimated_duration,
+  },
+) => {
+  //Check doctor shift
+  const shiftResult = await client.query(
+    `
+    SELECT 1
+    FROM doctor_shifts
+    WHERE doctor_id = $1
+      AND department_id = $2
+      AND clinic_id = $3
+      AND day_of_week = EXTRACT(DOW FROM $4::date)
+      AND is_day_off = false
+      AND $5::time >= start_time
+      AND ($5::time + ($6 || ' minutes')::interval) <= end_time
+    LIMIT 1
+    `,
+    [
+      doctor_id,
+      department_id,
+      clinic_id,
+      appointment_date,
+      scheduled_start_time,
+      estimated_duration,
+    ],
+  );
+
+  if (shiftResult.rowCount === 0) {
+    throw new Error("Doctor is not available during the selected time");
+  }
+
+  //Check overlapping appointments
+  const overlapResult = await client.query(
+    `
+    SELECT 1
+    FROM appointments
+    WHERE doctor_id = $1
+      AND appointment_date = $2
+      AND status IN ($5, $6, $7)
+      AND (
+        scheduled_start_time,
+        scheduled_start_time + (estimated_duration || ' minutes')::interval
+      ) OVERLAPS (
+        $3::time,
+        $3::time + ($4 || ' minutes')::interval
+      )
+    LIMIT 1
+    `,
+    [
+      doctor_id,
+      appointment_date,
+      scheduled_start_time,
+      estimated_duration,
+      APPOINTMENT_STATUS.Booked,
+      APPOINTMENT_STATUS.In_progress,
+      APPOINTMENT_STATUS.Checked_In,
+    ],
+  );
+
+  if (overlapResult.rowCount > 0) {
+    throw new Error("Doctor already has an appointment in this time slot");
+  }
+
+  return true;
+};
+
 export const assignQueueNumberQuery = async (client, data) => {
   const { clinic_id, department_id, doctor_id, appointment_date } = data;
 
@@ -309,11 +383,14 @@ export const getLiveAppointmentQuery = async (
       a.checked_in_time,
       a.actual_start_time,
       a.actual_end_time,
-      a.doctor_id             
+      a.doctor_id,
+      d.name AS doctor_name
+
     FROM appointments a
     JOIN users u ON u.id = a.patient_id
     LEFT JOIN users c ON c.id = a.created_by
     LEFT JOIN users x ON x.id = a.cancelled_by
+    LEFT JOIN doctors d ON d.id = a.doctor_id
     ${whereClause}
     ORDER BY a.doctor_id ASC, a.queue_number ASC
     `,

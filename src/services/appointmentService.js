@@ -11,6 +11,7 @@ import {
   assignQueueNumberQuery,
   cancelAppointmentQuery,
   checkAppointmentExistsQuery,
+  checkDoctorAvailability,
   checkDoctorInProgressQuery,
   checkDuplicateAppointmentQuery,
   checkDuplicatePatientRequestQuery,
@@ -58,6 +59,15 @@ export const staffBookAppointmentService = async (staffId, data) => {
     if (!estimatedDuration) {
       throw new Error("Invalid appointment type");
     }
+
+    await checkDoctorAvailability(client, {
+      doctor_id: data.doctor_id,
+      clinic_id: data.clinic_id,
+      department_id: data.department_id,
+      appointment_date: data.appointment_date,
+      scheduled_start_time: data.scheduled_start_time,
+      estimated_duration: estimatedDuration,
+    });
 
     const result = insertAppointmentQuery(
       client,

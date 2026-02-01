@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS doctor_shifts (
     clinic_id INT NOT NULL,
     department_id INT NOT NULL,
 
-    day_of_week INT NOT NULL CHECK (day_of_week BETWEEN 1 AND 7),
+    day_of_week INT NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
 
     start_time TIME,
     end_time TIME,
