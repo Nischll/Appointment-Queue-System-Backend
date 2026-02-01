@@ -21,7 +21,8 @@ import {
   getNextQueueNumberQuery,
   getPatientAppointmentHistoryQuery,
   getPatientLiveAppointmentQuery,
-  getPendingAppointmentsQuery,
+  getPatientPendingAppointmentsQuery,
+  getUpcomingAppointmentsQuery,
   insertAppointmentQuery,
   noShowAppointmentQuery,
   rejectAppointmentQuery,
@@ -426,35 +427,56 @@ export const updateAppointmentService = async (appointmentId, data) => {
   }
 };
 
-export const getPendingAppointmentsService = async ({
+export const getUpcomingAppointmentsService = async ({
+  date_from,
+  date_to,
+  page,
+  limit,
+  status,
   clinic_id,
   department_id,
   doctor_id,
   appointment_type,
   patient_name,
-  date_from,
-  date_to,
-  page,
-  limit,
 }) => {
-  if (!date_from && !date_to) {
+  if (!date_from || !date_to) {
     throw new Error("Date range is required");
   }
   if (!clinic_id) {
     throw new Error("Clinic is required");
   }
+
   const offset = (page - 1) * limit;
 
-  const { rows, total } = await getPendingAppointmentsQuery({
+  const today = new Date();
+  const todayStr = today.toISOString().split("T")[0];
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split("T")[0];
+
+  if (date_from < todayStr) {
+    throw new Error("Past date from is not valid");
+  }
+
+  const effectiveDateFrom =
+    (status === APPOINTMENT_STATUS.Rejected ||
+      status === APPOINTMENT_STATUS.Booked) &&
+    date_from === todayStr
+      ? tomorrowStr
+      : date_from;
+
+  const { rows, total } = await getUpcomingAppointmentsQuery({
+    date_from: effectiveDateFrom,
+    date_to,
+    limit,
+    offset,
+    status,
     clinic_id,
     department_id,
     doctor_id,
     appointment_type,
     patient_name,
-    date_from,
-    date_to,
-    limit,
-    offset,
   });
 
   const mapped = rows.map(mapAppointmentHistory);
@@ -673,4 +695,22 @@ export const getPatientAppointmentHistoryService = async ({
       total_pages: Math.ceil(total / limit),
     },
   };
+};
+
+export const getPatientPendingAppointmentsService = async ({
+  patient_id,
+  status,
+}) => {
+  if (!patient_id) {
+    throw new Error("Patient is required");
+  }
+
+  const { rows } = await getPatientPendingAppointmentsQuery({
+    patient_id,
+    status,
+  });
+
+  const mapped = rows.map(mapAppointmentHistory);
+
+  return mapped;
 };

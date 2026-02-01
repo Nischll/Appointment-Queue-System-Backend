@@ -1,6 +1,6 @@
 const APPOINTMENT_STATUS = Object.freeze({
   Requested: "REQUESTED",
-  Approved: "APPROVED",
+  // Approved: "APPROVED",
   Rejected: "REJECTED",
   Booked: "BOOKED",
   Checked_In: "CHECKED_IN",

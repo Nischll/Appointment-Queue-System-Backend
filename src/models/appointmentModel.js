@@ -512,22 +512,23 @@ export const updateAppointmentQuery = async (client, appointmentId, data) => {
   return result.rows[0];
 };
 
-export const getPendingAppointmentsQuery = async ({
+export const getUpcomingAppointmentsQuery = async ({
+  date_from,
+  date_to,
+  limit,
+  offset,
+  status,
   clinic_id,
   department_id,
   doctor_id,
   appointment_type,
   patient_name,
-  date_from,
-  date_to,
-  limit,
-  offset,
 }) => {
-  const values = [];
+  const values = [status];
   let whereClause = `
-    WHERE a.status = 'REQUESTED'
+    WHERE a.status = $1
   `;
-  let idx = 1;
+  let idx = 2;
 
   if (date_from && date_to) {
     whereClause += ` AND a.appointment_date BETWEEN $${idx++} AND $${idx++}`;
@@ -901,4 +902,44 @@ export const getPatientAppointmentHistoryQuery = async ({
     rows: result.rows,
     total,
   };
+};
+
+export const getPatientPendingAppointmentsQuery = async ({
+  patient_id,
+  status,
+}) => {
+  const result = await pool.query(
+    `
+    SELECT
+      a.id,
+      a.patient_id,
+      u.full_name AS patient_name,
+      a.clinic_id,
+      cl.name AS clinic_name,
+      a.department_id,
+      de.name AS department_name,
+      a.doctor_id,
+      d.name AS doctor_name,
+      a.status,
+      a.notes,
+      a.appointment_type,
+      TO_CHAR(a.appointment_date, 'YYYY-MM-DD') AS appointment_date,
+      a.preferred_time,
+      a.scheduled_start_time,
+      a.is_walk_in,
+      a.created_at
+    FROM appointments a
+    JOIN users u ON u.id = a.patient_id
+    LEFT JOIN clinics cl ON cl.id = a.clinic_id
+    LEFT JOIN departments de ON de.id = a.department_id
+    LEFT JOIN doctors d ON d.id = a.doctor_id
+    WHERE a.patient_id = $1
+      AND a.status = $2
+      AND a.appointment_date >= CURRENT_DATE
+    ORDER BY a.appointment_date ASC, a.created_at ASC
+    `,
+    [patient_id, status],
+  );
+
+  return { rows: result.rows };
 };

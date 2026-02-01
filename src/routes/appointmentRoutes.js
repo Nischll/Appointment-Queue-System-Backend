@@ -14,9 +14,10 @@ import {
   patientBookAppointment,
   getPatientLiveAppointments,
   getPatientAppointmentHistory,
-  getPendingAppointments,
   approveAppointment,
   rejectAppointment,
+  getPatientPendingAppointments,
+  getUpcomingAppointments,
 } from "../controllers/appointmentController.js";
 import { requireExternalUser } from "../middleware/requireExternalUser.js";
 
@@ -77,10 +78,10 @@ router.put(
   updateAppointment,
 );
 router.get(
-  "/pending",
+  "/upcoming",
   authenticate,
   authorizeModule("AM", "read"),
-  getPendingAppointments,
+  getUpcomingAppointments,
 );
 router.post(
   "/approve/:id",
@@ -113,6 +114,12 @@ router.get(
   authenticate,
   requireExternalUser,
   getPatientAppointmentHistory,
+);
+router.get(
+  "/patient/upcoming",
+  authenticate,
+  requireExternalUser,
+  getPatientPendingAppointments,
 );
 
 export default router;

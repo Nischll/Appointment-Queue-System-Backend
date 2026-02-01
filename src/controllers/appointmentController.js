@@ -3,6 +3,7 @@ import {
   StaffAppointmentDto,
 } from "../dto/appointmentDto.js";
 import { PatientAppointmentDto } from "../dto/patientAppointmentDto.js";
+import APPOINTMENT_STATUS from "../enums/appointmentStatus.enum.js";
 import {
   cancelAppointmentService,
   checkInAppointmentService,
@@ -16,9 +17,10 @@ import {
   patientBookAppointmentService,
   getPatientLiveAppointmentService,
   getPatientAppointmentHistoryService,
-  getPendingAppointmentsService,
   approveAppointmentService,
   rejectAppointmentService,
+  getPatientPendingAppointmentsService,
+  getUpcomingAppointmentsService,
 } from "../services/appointmentService.js";
 import { sendResponse } from "../utils/response.js";
 
@@ -181,30 +183,47 @@ export const updateAppointment = async (req, res) => {
   }
 };
 
-export const getPendingAppointments = async (req, res) => {
+export const getUpcomingAppointments = async (req, res) => {
   try {
     const {
+      date_from,
+      date_to,
+      status,
       clinic_id,
       department_id,
       doctor_id,
       appointment_type,
       patient_name,
-      date_from,
-      date_to,
       page = 1,
       limit = 10,
     } = req.query;
+    
+    if (
+      ![
+        APPOINTMENT_STATUS.Requested,
+        APPOINTMENT_STATUS.Booked,
+        APPOINTMENT_STATUS.Rejected,
+      ].includes(status)
+    ) {
+      return sendResponse(
+        res,
+        400,
+        "Invalid status. Allowed: REQUESTED, BOOKED, REJECTED",
+        null,
+      );
+    }
 
-    const data = await getPendingAppointmentsService({
+    const data = await getUpcomingAppointmentsService({
+      date_from,
+      date_to,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      status: status,
       clinic_id: parseInt(clinic_id),
       department_id: department_id ? parseInt(department_id) : null,
       doctor_id: doctor_id ? parseInt(doctor_id) : null,
       appointment_type: appointment_type || null,
       patient_name: patient_name || null,
-      date_from,
-      date_to,
-      page: parseInt(page),
-      limit: parseInt(limit),
     });
 
     return sendResponse(
@@ -340,6 +359,41 @@ export const getPatientAppointmentHistory = async (req, res) => {
     );
   } catch (error) {
     console.log("error fetching patient history.", error);
+    return sendResponse(res, error.statusCode || 500, error.message, null);
+  }
+};
+
+export const getPatientPendingAppointments = async (req, res) => {
+  try {
+    const { status } = req.query;
+    const patientId = req.user.id;
+
+    if (
+      ![APPOINTMENT_STATUS.Requested, APPOINTMENT_STATUS.Booked].includes(
+        status,
+      )
+    ) {
+      return sendResponse(
+        res,
+        400,
+        "Invalid status. Allowed: REQUESTED, BOOKED",
+        null,
+      );
+    }
+
+    const data = await getPatientPendingAppointmentsService({
+      patient_id: patientId,
+      status,
+    });
+
+    return sendResponse(
+      res,
+      200,
+      "Upcoming appointments fetched successfully.",
+      data,
+    );
+  } catch (error) {
+    console.log("error fetching upcoming appointments", error);
     return sendResponse(res, error.statusCode || 500, error.message, null);
   }
 };
