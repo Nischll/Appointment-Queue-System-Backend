@@ -1,5 +1,6 @@
 import {
   CancelAPpointmentDto,
+  FollowUpAppointmentDto,
   StaffAppointmentDto,
 } from "../dto/appointmentDto.js";
 import { PatientAppointmentDto } from "../dto/patientAppointmentDto.js";
@@ -21,6 +22,7 @@ import {
   rejectAppointmentService,
   getPatientPendingAppointmentsService,
   getUpcomingAppointmentsService,
+  createFollowUpAppointmentService,
 } from "../services/appointmentService.js";
 import { sendResponse } from "../utils/response.js";
 
@@ -197,7 +199,7 @@ export const getUpcomingAppointments = async (req, res) => {
       page = 1,
       limit = 10,
     } = req.query;
-    
+
     if (
       ![
         APPOINTMENT_STATUS.Requested,
@@ -291,6 +293,31 @@ export const rejectAppointment = async (req, res) => {
   } catch (error) {
     console.error("error rejecting appointment.", error);
     return sendResponse(res, error.statusCode || 500, error.message, null);
+  }
+};
+
+export const createFollowUpAppointment = async (req, res) => {
+  try {
+    const previousAppointmentId = parseInt(req.params.id, 10);
+    const staffId = req.user.id;
+
+    const dto = new FollowUpAppointmentDto(req.body);
+
+    const result = await createFollowUpAppointmentService(
+      previousAppointmentId,
+      staffId,
+      dto,
+    );
+
+    return sendResponse(
+      res,
+      200,
+      "Follow-up appointment created successfully",
+      result.id,
+    );
+  } catch (error) {
+    console.error("error creating follow-up appointment", error);
+    return sendResponse(res, 400, error.message, null);
   }
 };
 

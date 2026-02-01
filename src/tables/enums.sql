@@ -33,7 +33,6 @@ BEGIN
     ) THEN
         CREATE TYPE appointment_status AS ENUM (   
             'REQUESTED',
-            'APPROVED',
             'REJECTED',
             'BOOKED',
             'CHECKED_IN',

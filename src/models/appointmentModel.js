@@ -202,7 +202,7 @@ export const checkInAppointmentQuery = async (client, appointmentId) => {
 export const checkAppointmentExistsQuery = async (client, appointmentId) => {
   const result = await client.query(
     `   
-    SELECT id, doctor_id, clinic_id, department_id, appointment_date, status, actual_start_time
+    SELECT id, doctor_id, clinic_id, department_id, appointment_date, status, actual_start_time, patient_id
     FROM appointments
     WHERE id = $1
     FOR UPDATE
@@ -758,6 +758,58 @@ export const rejectAppointmentQuery = async (client, appointmentId, data) => {
   if (!result.rows.length) {
     throw new Error("Failed to reject appointment.");
   }
+
+  return result.rows[0];
+};
+
+export const insertFollowUpAppointmentQuery = async (
+  client,
+  previousAppointment,
+  data,
+  staffId,
+  queueNumber,
+  estimatedDuration
+) => {
+  const result = await client.query(
+    `
+    INSERT INTO appointments (
+      patient_id,
+      doctor_id,
+      clinic_id,
+      department_id,
+      appointment_type,
+      appointment_date,
+      scheduled_start_time,
+      estimated_duration,
+      status,
+      created_by,
+      notes,
+      previous_appointment_id,
+      queue_number,
+      is_walk_in
+    )
+    VALUES (
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14
+    )
+    RETURNING id
+    `,
+    [
+      previousAppointment.patient_id,
+      data.doctor_id,
+      previousAppointment.clinic_id,
+      previousAppointment.department_id,
+      data.appointment_type,
+      data.appointment_date,
+      data.scheduled_start_time,
+      estimatedDuration,
+      APPOINTMENT_STATUS.Booked,
+      staffId,
+      data.notes,
+      previousAppointment.id,
+      queueNumber,
+      false,
+    ]
+  );
 
   return result.rows[0];
 };

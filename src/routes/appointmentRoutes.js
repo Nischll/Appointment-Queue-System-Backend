@@ -18,6 +18,7 @@ import {
   rejectAppointment,
   getPatientPendingAppointments,
   getUpcomingAppointments,
+  createFollowUpAppointment,
 } from "../controllers/appointmentController.js";
 import { requireExternalUser } from "../middleware/requireExternalUser.js";
 
@@ -94,6 +95,12 @@ router.post(
   authenticate,
   authorizeModule("AM", "read"),
   rejectAppointment,
+);
+router.post(
+  "/follow-up/:id",
+  authenticate,
+  authorizeModule("AM", "write"),
+  createFollowUpAppointment,
 );
 
 // PATIENT

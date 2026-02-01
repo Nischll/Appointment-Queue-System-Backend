@@ -1,5 +1,6 @@
 import pool from "../config/db.js";
 import APPOINTMENT_STATUS from "../enums/appointmentStatus.enum.js";
+import APPOINTMENT_TYPE from "../enums/appointmentType.enum.js";
 import {
   mapAppointmentHistory,
   mapAppointmentWithPrediction,
@@ -25,6 +26,7 @@ import {
   getPatientPendingAppointmentsQuery,
   getUpcomingAppointmentsQuery,
   insertAppointmentQuery,
+  insertFollowUpAppointmentQuery,
   noShowAppointmentQuery,
   rejectAppointmentQuery,
   startAppointmentQuery,
@@ -581,6 +583,75 @@ export const rejectAppointmentService = async (appointmentId, data) => {
 
     await client.query("COMMIT");
     return rejected;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+export const createFollowUpAppointmentService = async (
+  previousAppointmentId,
+  staffId,
+  dto,
+) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const previous = await checkAppointmentExistsQuery(
+      client,
+      previousAppointmentId,
+    );
+
+    if (!previous) {
+      throw new Error("Previous appointment not found");
+    }
+
+    if (previous.status !== APPOINTMENT_STATUS.Completed) {
+      throw new Error(
+        "Follow-up can only be created from completed appointments",
+      );
+    }
+
+    if (new Date(dto.appointment_date) <= new Date()) {
+      throw new Error("Follow-up appointment must be on a future date");
+    }
+
+    const doctorId = dto.doctor_id || previous.doctor_id;
+
+    const estimatedDuration = APPOINTMENT_DURATION[dto.appointment_type];
+
+    await checkDoctorAvailability(client, {
+      doctor_id: doctorId,
+      clinic_id: previous.clinic_id,
+      department_id: previous.department_id,
+      appointment_date: dto.appointment_date,
+      scheduled_start_time: dto.scheduled_start_time,
+      estimated_duration: estimatedDuration,
+    });
+
+    const queueNumber = await assignQueueNumberQuery(client, {
+      doctor_id: doctorId,
+      clinic_id: previous.clinic_id,
+      department_id: previous.department_id,
+      appointment_date: dto.appointment_date,
+    });
+
+    const result = await insertFollowUpAppointmentQuery(
+      client,
+      previous,
+      { ...dto, doctor_id: doctorId },
+      staffId,
+      queueNumber,
+      estimatedDuration,
+    );
+
+    await client.query("COMMIT");
+
+    return result;
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
