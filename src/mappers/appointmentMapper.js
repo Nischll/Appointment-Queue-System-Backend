@@ -7,18 +7,28 @@ export const mapAppointmentWithPrediction = (appt, prediction) => {
       id: appt.id,
       patient_id: appt.patient_id,
       patient_name: appt.patient_name,
+
+      clinic_id: appt.clinic_id,
+      clinic_name: appt.clinic_name,
+
+      department_id: appt.department_id,
+      department_name: appt.department_name,
+
       doctor_id: appt.doctor_id,
       doctor_name: appt.doctor_name,
+
       queue_number: appt.queue_number,
       status: appt.status,
       notes: appt.notes,
-      created_by: appt.created_by,
+
       appointment_created_by: appt.appointment_created_by,
-      cancelled_by: appt.cancelled_by,
+      appointment_approved_by: appt.appointment_approved_by,
       appointment_cancelled_by: appt.appointment_cancelled_by,
       cancellation_reason: appt.cancellation_reason,
+
       appointment_type: appt.appointment_type,
       appointment_date: appt.appointment_date,
+      
       scheduled_start_time: formatTimeToAMPM(appt.scheduled_start_time),
       is_walk_in: appt.is_walk_in,
       checked_in_time: formatTimeToAMPM(appt.checked_in_time),
@@ -64,11 +74,9 @@ export const mapAppointmentHistory = (appt) => {
     status: appt.status,
     notes: appt.notes,
 
-    appointment_created_by_id: appt.created_by,
-    appointment_created_by_name: appt.created_by_name,
-
-    cancelled_by_id: appt.cancelled_by,
-    cancelled_by_name: appt.cancelled_by_name,
+    appointment_created_by: appt.appointment_created_by,
+    appointment_approved_by: appt.appointment_approved_by,
+    appointment_cancelled_by: appt.appointment_cancelled_by,
 
     cancellation_reason: appt.cancellation_reason,
     appointment_type: appt.appointment_type,

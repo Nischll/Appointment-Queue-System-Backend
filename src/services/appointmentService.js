@@ -1,6 +1,5 @@
 import pool from "../config/db.js";
 import APPOINTMENT_STATUS from "../enums/appointmentStatus.enum.js";
-import APPOINTMENT_TYPE from "../enums/appointmentType.enum.js";
 import {
   mapAppointmentHistory,
   mapAppointmentWithPrediction,
