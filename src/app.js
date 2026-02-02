@@ -17,6 +17,7 @@ import appointmentRoutes from "./routes/appointmentRoutes.js";
 import appointmentMetricsRoutes from "./routes/appointmentMetricsRoutes.js";
 import appointmentQueueRoutes from "./routes/appointmentQueueRoutes.js";
 import predictWaitTimeRoutes from "./routes/predictWaitTimeRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 
 dotenv.config();
 
@@ -42,10 +43,12 @@ app.use("/api/doctor-shifts", doctorShiftRoutes);
 
 app.use("/api/appointments", appointmentRoutes);
 
-app.use("/api/metrics", appointmentMetricsRoutes);
+// app.use("/api/metrics", appointmentMetricsRoutes);
 
-app.use("/api/queue", appointmentQueueRoutes);
+// app.use("/api/queue", appointmentQueueRoutes);
 
-app.use("/api/predict-wait-time", predictWaitTimeRoutes);
+// app.use("/api/predict-wait-time", predictWaitTimeRoutes);
+
+app.use("/api/dashboard", dashboardRoutes);
 
 export default app;

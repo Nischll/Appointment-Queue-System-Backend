@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS appointments (
     created_by INT REFERENCES users(id) ON DELETE CASCADE,
     approved_by INT REFERENCES users(id) ON DELETE CASCADE,
     cancelled_by INT REFERENCES users(id) ON DELETE CASCADE,
+    rescheduled_by INT REFERENCES users(id) ON DELETE CASCADE,
     previous_appointment_id INT REFERENCES appointments(id),
 
     -- Status lifecycle

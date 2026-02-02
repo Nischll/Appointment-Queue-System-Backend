@@ -28,6 +28,7 @@ import {
   insertFollowUpAppointmentQuery,
   noShowAppointmentQuery,
   rejectAppointmentQuery,
+  rescheduleAppointmentQuery,
   startAppointmentQuery,
   updateAppointmentQuery,
 } from "../models/appointmentModel.js";
@@ -654,6 +655,65 @@ export const createFollowUpAppointmentService = async (
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
+  } finally {
+    client.release();
+  }
+};
+
+export const rescheduleAppointmentService = async (
+  appointmentId,
+  staffId,
+  data,
+) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const appointment = await checkAppointmentExistsQuery(
+      client,
+      appointmentId,
+    );
+
+    if (!appointment) {
+      throw new Error("Appointment not found");
+    }
+
+    if (
+      ![APPOINTMENT_STATUS.Booked, APPOINTMENT_STATUS.Requested].includes(
+        appointment.status,
+      )
+    ) {
+      throw new Error("Appointment cannot be rescheduled");
+    }
+
+    const estimatedDuration =
+      APPOINTMENT_DURATION[
+        data.appointment_type || appointment.appointment_type
+      ];
+
+    await checkDoctorAvailability(client, {
+      doctor_id: data.doctor_id || appointment.doctor_id,
+      clinic_id: data.clinic_id || appointment.clinic_id,
+      department_id: data.department_id || appointment.department_id,
+      appointment_date: data.appointment_date,
+      scheduled_start_time: data.scheduled_start_time,
+      estimated_duration: estimatedDuration,
+      exclude_appointment_id: appointmentId,
+    });
+
+    const result = await rescheduleAppointmentQuery(
+      client,
+      appointmentId,
+      staffId,
+      data,
+    );
+
+    await client.query("COMMIT");
+    return result;
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
   } finally {
     client.release();
   }

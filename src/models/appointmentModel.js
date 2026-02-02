@@ -202,7 +202,7 @@ export const checkInAppointmentQuery = async (client, appointmentId) => {
 export const checkAppointmentExistsQuery = async (client, appointmentId) => {
   const result = await client.query(
     `   
-    SELECT id, doctor_id, clinic_id, department_id, appointment_date, status, actual_start_time, patient_id
+    SELECT id, doctor_id, clinic_id, department_id, appointment_date, status, actual_start_time, patient_id, appointment_type
     FROM appointments
     WHERE id = $1
     FOR UPDATE
@@ -835,6 +835,42 @@ export const insertFollowUpAppointmentQuery = async (
       previousAppointment.id,
       queueNumber,
       false,
+    ],
+  );
+
+  return result.rows[0];
+};
+
+export const rescheduleAppointmentQuery = async (
+  client,
+  appointmentId,
+  staffId,
+  data,
+) => {
+  const result = await client.query(
+    `
+    UPDATE appointments
+    SET
+      appointment_date = $1,
+      scheduled_start_time = $2,
+      doctor_id = $3,
+      clinic_id = $4,
+      department_id = $5,
+      notes = COALESCE($6, notes),
+      rescheduled_by = $7,
+      updated_at = NOW()
+    WHERE id = $8
+    RETURNING *
+    `,
+    [
+      data.appointment_date,
+      data.scheduled_start_time,
+      data.doctor_id,
+      data.clinic_id,
+      data.department_id,
+      data.notes,
+      staffId,
+      appointmentId,
     ],
   );
 

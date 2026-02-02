@@ -1,6 +1,7 @@
 import {
   CancelAPpointmentDto,
   FollowUpAppointmentDto,
+  RescheduleAppointmentDto,
   StaffAppointmentDto,
 } from "../dto/appointmentDto.js";
 import { PatientAppointmentDto } from "../dto/patientAppointmentDto.js";
@@ -23,6 +24,7 @@ import {
   getPatientPendingAppointmentsService,
   getUpcomingAppointmentsService,
   createFollowUpAppointmentService,
+  rescheduleAppointmentService,
 } from "../services/appointmentService.js";
 import { sendResponse } from "../utils/response.js";
 
@@ -318,6 +320,31 @@ export const createFollowUpAppointment = async (req, res) => {
   } catch (error) {
     console.error("error creating follow-up appointment", error);
     return sendResponse(res, 400, error.message, null);
+  }
+};
+
+export const rescheduleAppointment = async (req, res) => {
+  try {
+    const appointmentId = parseInt(req.params.id, 10);
+    const staffId = req.user.id;
+
+    const dto = new RescheduleAppointmentDto(req.body);
+
+    const data = await rescheduleAppointmentService(
+      appointmentId,
+      staffId,
+      dto,
+    );
+
+    return sendResponse(
+      res,
+      200,
+      "Appointment rescheduled successfully",
+      data.id,
+    );
+  } catch (error) {
+    console.error("error rescheduling appointment", error);
+    return sendResponse(res, error.statusCode || 500, error.message, null);
   }
 };
 
