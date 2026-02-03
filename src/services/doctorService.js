@@ -5,6 +5,7 @@ import {
   createDoctorQuery,
   findDoctorByEmail,
   getDoctorsByDepartmentQuery,
+  getPatientDoctorsQuery,
   removeDoctorFromDepartmentQuery,
   updateDoctorQuery,
 } from "../models/doctorModels.js";
@@ -70,7 +71,7 @@ export const updateDoctorService = async (doctorId, data) => {
 
 export const removeDoctorFromDepartmentService = async (
   doctorId,
-  departmentId
+  departmentId,
 ) => {
   if (!doctorId || !departmentId) {
     throw new Error("Doctor and department id are required.");
@@ -83,4 +84,34 @@ export const removeDoctorFromDepartmentService = async (
   }
 
   return removed;
+};
+
+// PATIENT
+export const getPatientDoctorsService = async ({ clinicId, date }) => {
+  if (!clinicId) {
+    throw new Error("Clinic is required");
+  }
+
+  if (!date) {
+    throw new Error("Date is required");
+  }
+
+  const selectedDate = new Date(date);
+  if (isNaN(selectedDate.getTime())) {
+    throw new Error("Invalid date format");
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  selectedDate.setHours(0, 0, 0, 0);
+
+  if (selectedDate < today) {
+    throw new Error("Past date is not allowed");
+  }
+  const dayOfWeek = selectedDate.getDay();
+
+  return await getPatientDoctorsQuery({
+    clinicId,
+    dayOfWeek,
+  });
 };

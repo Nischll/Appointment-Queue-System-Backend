@@ -3,7 +3,7 @@ import pool from "../config/db.js";
 export const findDoctorByEmail = async (email) => {
   const result = await pool.query(
     `SELECT * FROM doctors WHERE email = $1 AND status = TRUE`,
-    [email]
+    [email],
   );
   return result.rows[0] || null;
 };
@@ -15,7 +15,7 @@ export const createDoctorQuery = async ({ name, phone, email }) => {
     VALUES ($1, $2, $3)
     RETURNING *
     `,
-    [name, phone, email]
+    [name, phone, email],
   );
   return result.rows[0];
 };
@@ -37,13 +37,13 @@ export const addDoctorToDepartmentsQuery = async (doctorId, departmentIds) => {
     VALUES ${values}
     ON CONFLICT (doctor_id, department_id) DO NOTHING
     `,
-    params
+    params,
   );
 };
 
 export const getDoctorsByDepartmentQuery = async (departmentId) => {
   const result = await pool.query(
-      `
+    `
       SELECT
         d.id,
         d.name,
@@ -79,7 +79,7 @@ export const getDoctorsByDepartmentQuery = async (departmentId) => {
         AND d.status = TRUE
       ORDER BY d.name
     `,
-    [departmentId]
+    [departmentId],
   );
 
   return result.rows;
@@ -99,16 +99,15 @@ export const updateDoctorQuery = async (doctorId, data) => {
       AND status = TRUE
     RETURNING *
     `,
-    [name, phone, email, doctorId]
+    [name, phone, email, doctorId],
   );
 
   return result.rows[0] || null;
 };
 
-
 export const removeDoctorFromDepartmentQuery = async (
   doctorId,
-  departmentId
+  departmentId,
 ) => {
   const result = await pool.query(
     `
@@ -119,8 +118,55 @@ export const removeDoctorFromDepartmentQuery = async (
       AND status = TRUE
     RETURNING doctor_id
     `,
-    [doctorId, departmentId]
+    [doctorId, departmentId],
   );
 
   return result.rows[0] || null;
+};
+
+// PATIENT
+export const getPatientDoctorsQuery = async ({ clinicId, dayOfWeek }) => {
+  const result = await pool.query(
+    `
+    SELECT
+      d.id,
+      d.name,
+      d.phone,
+      d.email,
+
+      c.id AS clinic_id,
+      c.name AS clinic_name,
+
+      de.id AS department_id,
+      de.name AS department_name,
+
+      ds.start_time,
+      ds.end_time,
+      ds.is_day_off
+
+    FROM doctors d
+    JOIN doctor_departments dd
+      ON dd.doctor_id = d.id
+    JOIN departments de
+      ON de.id = dd.department_id
+    JOIN clinics c
+      ON c.id = de.clinic_id
+
+    LEFT JOIN doctor_shifts ds
+      ON ds.doctor_id = d.id
+    AND ds.department_id = dd.department_id
+    AND ds.clinic_id = c.id
+    AND ds.day_of_week = $2
+
+    WHERE c.id = $1
+      AND d.status = TRUE
+      AND dd.status = TRUE
+      AND COALESCE(ds.is_day_off, FALSE) = FALSE
+
+    ORDER BY d.name;
+    `,
+    [clinicId, dayOfWeek],
+  );
+
+  return result.rows;
 };

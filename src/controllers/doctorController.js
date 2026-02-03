@@ -3,6 +3,7 @@ import { formatTimeToAMPM } from "../helper/formatTimeToAMPM.js";
 import {
   createDoctorService,
   getDoctorsByDepartmentService,
+  getPatientDoctorsService,
   removeDoctorFromDepartmentService,
   updateDoctorService,
 } from "../services/doctorService.js";
@@ -86,5 +87,27 @@ export const deleteDoctor = async (req, res) => {
       error.message,
       null,
     );
+  }
+};
+
+// PATIENT
+export const getPatientDoctors = async (req, res) => {
+  try {
+    const { clinicId, date } = req.query;
+
+    const data = await getPatientDoctorsService({
+      clinicId,
+      date,
+    });
+
+    const formatted = data.map((d) => ({
+      ...d,
+      start_time: formatTimeToAMPM(d.start_time),
+      end_time: formatTimeToAMPM(d.end_time),
+    }));
+
+    return sendResponse(res, 200, "Doctors fetched successfully", formatted);
+  } catch (error) {
+    return sendResponse(res, 400, error.message, null);
   }
 };

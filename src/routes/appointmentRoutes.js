@@ -11,17 +11,12 @@ import {
   startAppointment,
   getAppointmentHistory,
   updateAppointment,
-  patientBookAppointment,
-  getPatientLiveAppointments,
-  getPatientAppointmentHistory,
   approveAppointment,
   rejectAppointment,
-  getPatientPendingAppointments,
   getUpcomingAppointments,
   createFollowUpAppointment,
   rescheduleAppointment,
 } from "../controllers/appointmentController.js";
-import { requireExternalUser } from "../middleware/requireExternalUser.js";
 
 const router = express.Router();
 
@@ -108,32 +103,6 @@ router.put(
   authenticate,
   authorizeModule("AM", "update"),
   rescheduleAppointment,
-);
-
-// PATIENT
-router.post(
-  "/patient/book",
-  authenticate,
-  requireExternalUser,
-  patientBookAppointment,
-);
-router.get(
-  "/patient/live",
-  authenticate,
-  requireExternalUser,
-  getPatientLiveAppointments,
-);
-router.get(
-  "/patient/history",
-  authenticate,
-  requireExternalUser,
-  getPatientAppointmentHistory,
-);
-router.get(
-  "/patient/upcoming",
-  authenticate,
-  requireExternalUser,
-  getPatientPendingAppointments,
 );
 
 export default router;
