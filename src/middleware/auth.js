@@ -5,7 +5,7 @@ export const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return sendResponse(res, 403, "Unauthorized", null);
+    return sendResponse(res, 401, "Unauthorized", null);
   }
 
   const token = authHeader.split(" ")[1];
@@ -15,6 +15,6 @@ export const authenticate = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
-    return sendResponse(res, 401, "Invalid or expired token", null);
+    return sendResponse(res, 403, "Invalid or expired token", null);
   }
 };

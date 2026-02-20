@@ -28,7 +28,7 @@ export const authorizeModule = (
       if (user_type === USER_TYPE.External) {
         return sendResponse(
           res,
-          403,
+          401,
           "Patient users are not allowed to access this resource",
           null
         );
@@ -36,7 +36,7 @@ export const authorizeModule = (
 
       // INTERNAL user must have a role
       if (user_type === USER_TYPE.Internal && !roleCode) {
-        return sendResponse(res, 403, "Role not assigned", null);
+        return sendResponse(res, 401, "Role not assigned", null);
       }
 
       // Admin bypass
@@ -56,7 +56,7 @@ export const authorizeModule = (
       if (result.rows.length === 0) {
         return sendResponse(
           res,
-          403,
+          401,
           "You do not have permission to access this module",
           null
         );
@@ -74,7 +74,7 @@ export const authorizeModule = (
       if (action === "read" && !perms.can_read) {
         return sendResponse(
           res,
-          403,
+          401,
           "You do not have permission to read this module",
           null
         );
@@ -85,7 +85,7 @@ export const authorizeModule = (
         if (!allowApiOnly || !perms.can_read) {
           return sendResponse(
             res,
-            403,
+            401,
             `You do not have permission to ${action} this module`,
             null
           );
