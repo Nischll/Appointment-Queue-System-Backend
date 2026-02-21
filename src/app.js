@@ -18,6 +18,8 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import patientAppointmentRoutes from "./routes/patientAppointmentRoutes.js";
 import patientClinicRoutes from "./routes/patientClinicRoutes.js";
 import patientDoctorRoutes from "./routes/patientDoctorRoutes.js";
+import patientProfileRoutes from "./routes/patientProfileRoutes.js";
+import staffProfileRoutes from "./routes/staffProfileRoutes.js";
 
 dotenv.config();
 
@@ -32,6 +34,7 @@ initDb().catch((err) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/init", initRoutes);
 app.use("/api/role", roleRoutes);
+app.use("/api/profile", staffProfileRoutes);
 
 app.use("/api/users", userRoutes);
 app.use("/api/patient", patientRoutes);
@@ -51,9 +54,10 @@ app.use("/api/appointments", appointmentRoutes);
 
 app.use("/api/dashboard", dashboardRoutes);
 
-// PATIENT ROUTES
+// PATIENT ROUTES (authenticated patient only)
 app.use("/patient/appointment", patientAppointmentRoutes);
 app.use("/patient/clinics", patientClinicRoutes);
 app.use("/patient/doctors", patientDoctorRoutes);
+app.use("/patient/profile", patientProfileRoutes);
 
 export default app;

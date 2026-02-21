@@ -76,6 +76,16 @@ const modules = [
     icon: "CalendarPlus",
     path: "/appointment-management",
   },
+  {
+    id: 10,
+    parent_id: null,
+    orders: 5,
+    name: "Profile",
+    code: "P",
+    description: "Manage profiles.",
+    icon: "CircleUserRound",
+    path: "/profile",
+  },
 
   //Reports
   // {
