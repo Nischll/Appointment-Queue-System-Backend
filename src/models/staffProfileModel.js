@@ -15,7 +15,7 @@ export const getInternalUserByIdQuery = async (userId) => {
       u.phone,
       u.gender
     FROM users u
-    WHERE u.id = $1 AND u.user_type = 'INTERNAL' AND u.isactive = TRUE
+    WHERE u.id = $1 AND u.isactive = TRUE
     `,
     [userId]
   );
@@ -40,7 +40,7 @@ export const updateInternalUserEditableFieldsQuery = async (
       email = COALESCE($3, email),
       phone = COALESCE($4, phone),
       gender = COALESCE($5, gender)
-    WHERE id = $6 AND user_type = 'INTERNAL' AND isactive = TRUE
+    WHERE id = $6 AND isactive = TRUE
     RETURNING id
     `,
     [full_name, username, email, phone, gender, userId]
@@ -53,7 +53,7 @@ export const updateInternalUserEditableFieldsQuery = async (
  */
 export const getInternalUserPasswordQuery = async (userId) => {
   const result = await pool.query(
-    `SELECT password FROM users WHERE id = $1 AND user_type = 'INTERNAL' AND isactive = TRUE`,
+    `SELECT password FROM users WHERE id = $1 AND isactive = TRUE`,
     [userId]
   );
   return result.rows[0];
@@ -68,7 +68,7 @@ export const updateInternalUserPasswordQuery = async (
   hashedPassword
 ) => {
   await client.query(
-    `UPDATE users SET password = $1 WHERE id = $2 AND user_type = 'INTERNAL' AND isactive = TRUE`,
+    `UPDATE users SET password = $1 WHERE id = $2 AND isactive = TRUE`,
     [hashedPassword, userId]
   );
 };
