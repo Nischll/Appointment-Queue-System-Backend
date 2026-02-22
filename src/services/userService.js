@@ -9,6 +9,7 @@ import {
   getStaffWithClinicsQuery,
 } from "../models/userModel.js";
 import { mapUserToResponse } from "../mappers/userMapper.js";
+import { queueEmail, sendWelcomeStaff } from "./emailService.js";
 
 export const createUserService = async (dto) => {
   const {
@@ -40,6 +41,17 @@ export const createUserService = async (dto) => {
     for (const clinicId of clinic_ids) {
       await assignStaffToClinicQuery(userId, clinicId);
     }
+  }
+
+  if (email && password) {
+    queueEmail(() =>
+      sendWelcomeStaff({
+        to: email,
+        fullName: full_name,
+        username,
+        temporaryPassword: password,
+      })
+    );
   }
 
   return userId;

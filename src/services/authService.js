@@ -2,6 +2,7 @@ import pool from "../config/db.js";
 import bcrypt from "bcrypt";
 import { generateAccessToken, generateRefreshToken } from "../utils/token.js";
 import USER_TYPE from "../enums/userType.enum.js";
+import { queueEmail, sendWelcomePatientSignup } from "./emailService.js";
 
 export const createPatientCore = async (client, payload) => {
   const {
@@ -90,6 +91,17 @@ export const signupService = async (dto) => {
     const userId = await createPatientCore(client, dto);
 
     await client.query("COMMIT");
+
+    if (dto.email) {
+      queueEmail(() =>
+        sendWelcomePatientSignup({
+          to: dto.email,
+          fullName: dto.full_name,
+          username: dto.username,
+        })
+      );
+    }
+
     return userId;
   } catch (e) {
     await client.query("ROLLBACK");

@@ -6,6 +6,7 @@ import {
   updatePatientQuery,
 } from "../models/patientModel.js";
 import { createPatientCore } from "./authService.js";
+import { queueEmail, sendWelcomePatientCreatedByAdmin } from "./emailService.js";
 
 export const createPatientService = async (dto) => {
   const client = await pool.connect();
@@ -21,6 +22,18 @@ export const createPatientService = async (dto) => {
     const userId = await createPatientCore(client, payload);
 
     await client.query("COMMIT");
+
+    if (dto.email && dto.password) {
+      queueEmail(() =>
+        sendWelcomePatientCreatedByAdmin({
+          to: dto.email,
+          fullName: dto.full_name,
+          username: dto.username,
+          temporaryPassword: dto.password,
+        })
+      );
+    }
+
     return userId;
   } catch (e) {
     await client.query("ROLLBACK");
