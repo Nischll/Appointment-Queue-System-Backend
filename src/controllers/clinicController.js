@@ -1,4 +1,5 @@
 import { ClinicDto } from "../dto/clinicDto.js";
+import USER_TYPE from "../enums/userType.enum.js";
 import {
   createClinicService,
   deleteClinicService,
@@ -32,7 +33,11 @@ export const getClinics = async (req, res) => {
 export const getClinicsByStaff = async (req, res) => {
   try {
     const userId = req.params.id;
-    const data = await getClinicByStaffService(userId);
+    // SUPERADMIN sees all clinics; other staff see only their assigned clinics
+    const isSuperAdmin = req.user?.user_type === USER_TYPE.SuperAdmin;
+    const data = isSuperAdmin
+      ? await getAllClinicService()
+      : await getClinicByStaffService(userId);
     return sendResponse(res, 200, "Successfully retrieved clinics", data);
   } catch (error) {
     console.error("error getting clinics", error);

@@ -7,6 +7,7 @@ export const mapAppointmentWithPrediction = (appt, prediction) => {
       id: appt.id,
       patient_id: appt.patient_id,
       patient_name: appt.patient_name,
+      patient_phone: appt.patient_phone ?? null,
 
       clinic_id: appt.clinic_id,
       clinic_name: appt.clinic_name,
@@ -24,6 +25,7 @@ export const mapAppointmentWithPrediction = (appt, prediction) => {
       appointment_created_by: appt.appointment_created_by,
       appointment_approved_by: appt.appointment_approved_by,
       appointment_cancelled_by: appt.appointment_cancelled_by,
+      appointment_rescheduled_by: appt.appointment_rescheduled_by ?? null,
       cancellation_reason: appt.cancellation_reason,
 
       appointment_type: appt.appointment_type,
@@ -60,6 +62,7 @@ export const mapAppointmentHistory = (appt) => {
     id: appt.id,
     patient_id: appt.patient_id,
     patient_name: appt.patient_name,
+    patient_phone: appt.patient_phone ?? null,
 
     clinic_id: appt.clinic_id,
     clinic_name: appt.clinic_name,
@@ -77,6 +80,7 @@ export const mapAppointmentHistory = (appt) => {
     appointment_created_by: appt.appointment_created_by,
     appointment_approved_by: appt.appointment_approved_by,
     appointment_cancelled_by: appt.appointment_cancelled_by,
+    appointment_rescheduled_by: appt.appointment_rescheduled_by ?? null,
 
     cancellation_reason: appt.cancellation_reason,
     appointment_type: appt.appointment_type,
@@ -104,6 +108,7 @@ export const mapPatientAppointmentWithPrediction = (appt, prediction) => {
       id: appt.id,
       // patient_id: appt.patient_id,
       patient_name: appt.patient_name,
+      patient_phone: appt.patient_phone ?? null,
 
       // clinic_id: appt.clinic_id,
       clinic_name: appt.clinic_name,
@@ -132,6 +137,7 @@ export const mapPatientAppointmentWithPrediction = (appt, prediction) => {
       appointment_approved_by: appt.appointment_approved_by,
       cancelled_by: appt.cancelled_by,
       appointment_cancelled_by: appt.appointment_cancelled_by,
+      appointment_rescheduled_by: appt.appointment_rescheduled_by ?? null,
       cancellation_reason: appt.cancellation_reason,
     },
 

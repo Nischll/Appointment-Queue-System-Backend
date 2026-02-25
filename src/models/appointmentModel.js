@@ -368,6 +368,7 @@ export const getLiveAppointmentQuery = async (
       a.id,
       a.patient_id,
       u.full_name AS patient_name,
+      u.phone AS patient_phone,
       a.queue_number,
       a.status,
       a.notes,
@@ -377,6 +378,8 @@ export const getLiveAppointmentQuery = async (
       ap.full_name AS appointment_approved_by,
       a.cancelled_by,
       x.full_name AS appointment_cancelled_by,
+      a.rescheduled_by,
+      rs.full_name AS appointment_rescheduled_by,
       a.cancellation_reason,
       a.appointment_type,
       TO_CHAR(a.appointment_date, 'YYYY-MM-DD') AS appointment_date,
@@ -397,6 +400,7 @@ export const getLiveAppointmentQuery = async (
     JOIN users u ON u.id = a.patient_id
     LEFT JOIN users c ON c.id = a.created_by
     LEFT JOIN users x ON x.id = a.cancelled_by
+    LEFT JOIN users rs ON rs.id = a.rescheduled_by
     LEFT JOIN users ap ON ap.id = a.approved_by
     LEFT JOIN doctors d ON d.id = a.doctor_id
     LEFT JOIN clinics cl ON cl.id = a.clinic_id
@@ -479,6 +483,7 @@ export const getAppointmentHistoryQuery = async ({
       a.id,
       a.patient_id,
       u.full_name AS patient_name,
+      u.phone AS patient_phone,
       a.clinic_id,
       cl.name AS clinic_name,
       a.department_id,
@@ -494,6 +499,8 @@ export const getAppointmentHistoryQuery = async ({
       ap.full_name AS appointment_approved_by,
       a.cancelled_by,
       x.full_name AS appointment_cancelled_by,
+      a.rescheduled_by,
+      rs.full_name AS appointment_rescheduled_by,
       a.cancellation_reason,
       a.appointment_type,
       TO_CHAR(a.appointment_date, 'YYYY-MM-DD') AS appointment_date,
@@ -507,6 +514,7 @@ export const getAppointmentHistoryQuery = async ({
     JOIN users u ON u.id = a.patient_id
     LEFT JOIN users c ON c.id = a.created_by
     LEFT JOIN users x ON x.id = a.cancelled_by
+    LEFT JOIN users rs ON rs.id = a.rescheduled_by
     LEFT JOIN users ap ON ap.id = a.approved_by
     LEFT JOIN clinics cl ON cl.id = a.clinic_id
     LEFT JOIN departments de ON de.id = a.department_id
@@ -669,6 +677,7 @@ export const getUpcomingAppointmentsQuery = async ({
       a.id,
       a.patient_id,
       u.full_name AS patient_name,
+      u.phone AS patient_phone,
       a.clinic_id,
       cl.name AS clinic_name,
       a.department_id,
@@ -684,6 +693,8 @@ export const getUpcomingAppointmentsQuery = async ({
       ap.full_name AS appointment_approved_by,
       a.cancelled_by,
       x.full_name AS appointment_cancelled_by,
+      a.rescheduled_by,
+      rs.full_name AS appointment_rescheduled_by,
       a.cancellation_reason,
       a.appointment_type,
       TO_CHAR(a.appointment_date, 'YYYY-MM-DD') AS appointment_date,
@@ -697,6 +708,7 @@ export const getUpcomingAppointmentsQuery = async ({
     JOIN users u ON u.id = a.patient_id
     LEFT JOIN users c ON c.id = a.created_by
     LEFT JOIN users x ON x.id = a.cancelled_by
+    LEFT JOIN users rs ON rs.id = a.rescheduled_by
     LEFT JOIN users ap ON ap.id = a.approved_by
     LEFT JOIN clinics cl ON cl.id = a.clinic_id
     LEFT JOIN departments de ON de.id = a.department_id
@@ -974,6 +986,7 @@ export const getPatientLiveAppointmentQuery = async (
       a.id,
       a.patient_id,
       u.full_name AS patient_name,
+      u.phone AS patient_phone,
       a.clinic_id,
       cl.name AS clinic_name,
       cl.address AS clinic_address,
@@ -988,6 +1001,8 @@ export const getPatientLiveAppointmentQuery = async (
       c.full_name AS appointment_approved_by,
       a.cancelled_by,
       x.full_name AS appointment_cancelled_by,
+      a.rescheduled_by,
+      rs.full_name AS appointment_rescheduled_by,
       a.cancellation_reason,
       a.appointment_type,
       TO_CHAR(a.appointment_date, 'YYYY-MM-DD') AS appointment_date,
@@ -1003,6 +1018,7 @@ export const getPatientLiveAppointmentQuery = async (
     JOIN users u ON u.id = a.patient_id
     LEFT JOIN users c ON c.id = a.approved_by
     LEFT JOIN users x ON x.id = a.cancelled_by
+    LEFT JOIN users rs ON rs.id = a.rescheduled_by
     LEFT JOIN clinics cl ON cl.id = a.clinic_id
     LEFT JOIN departments de ON de.id = a.department_id
     LEFT JOIN doctors d ON d.id = a.doctor_id
@@ -1055,6 +1071,7 @@ export const getPatientAppointmentHistoryQuery = async ({
       a.id,
       a.patient_id,
       u.full_name AS patient_name,
+      u.phone AS patient_phone,
       a.clinic_id,
       cl.name AS clinic_name,
       a.department_id,
@@ -1068,6 +1085,8 @@ export const getPatientAppointmentHistoryQuery = async ({
       c.full_name AS created_by_name,
       a.cancelled_by,
       x.full_name AS cancelled_by_name,
+      a.rescheduled_by,
+      rs.full_name AS appointment_rescheduled_by,
       a.cancellation_reason,
       a.appointment_type,
       TO_CHAR(a.appointment_date, 'YYYY-MM-DD') AS appointment_date,
@@ -1080,6 +1099,7 @@ export const getPatientAppointmentHistoryQuery = async ({
     JOIN users u ON u.id = a.patient_id
     LEFT JOIN users c ON c.id = a.created_by
     LEFT JOIN users x ON x.id = a.cancelled_by
+    LEFT JOIN users rs ON rs.id = a.rescheduled_by
     LEFT JOIN clinics cl ON cl.id = a.clinic_id
     LEFT JOIN departments de ON de.id = a.department_id
     LEFT JOIN doctors d ON d.id = a.doctor_id
@@ -1106,6 +1126,7 @@ export const getPatientPendingAppointmentsQuery = async ({
       a.id,
       a.patient_id,
       u.full_name AS patient_name,
+      u.phone AS patient_phone,
       a.clinic_id,
       cl.name AS clinic_name,
       a.department_id,
@@ -1119,9 +1140,12 @@ export const getPatientPendingAppointmentsQuery = async ({
       a.preferred_time,
       a.scheduled_start_time,
       a.is_walk_in,
-      a.created_at
+      a.created_at,
+      a.rescheduled_by,
+      rs.full_name AS appointment_rescheduled_by
     FROM appointments a
     JOIN users u ON u.id = a.patient_id
+    LEFT JOIN users rs ON rs.id = a.rescheduled_by
     LEFT JOIN clinics cl ON cl.id = a.clinic_id
     LEFT JOIN departments de ON de.id = a.department_id
     LEFT JOIN doctors d ON d.id = a.doctor_id
