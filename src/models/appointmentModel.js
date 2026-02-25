@@ -532,6 +532,41 @@ export const getAppointmentHistoryQuery = async ({
   };
 };
 
+/**
+ * Get appointment details with patient email for sending notifications.
+ * Returns null if appointment not found. Use after transaction commit.
+ */
+export const getAppointmentDetailsForNotification = async (appointmentId) => {
+  const result = await pool.query(
+    `
+    SELECT
+      a.id,
+      a.patient_id,
+      u.full_name AS patient_name,
+      u.email AS patient_email,
+      a.appointment_type,
+      TO_CHAR(a.appointment_date, 'YYYY-MM-DD') AS appointment_date,
+      a.scheduled_start_time,
+      a.preferred_time,
+      a.queue_number,
+      a.status,
+      a.cancellation_reason,
+      a.notes,
+      cl.name AS clinic_name,
+      de.name AS department_name,
+      d.name AS doctor_name
+    FROM appointments a
+    JOIN users u ON u.id = a.patient_id
+    LEFT JOIN clinics cl ON cl.id = a.clinic_id
+    LEFT JOIN departments de ON de.id = a.department_id
+    LEFT JOIN doctors d ON d.id = a.doctor_id
+    WHERE a.id = $1
+    `,
+    [appointmentId],
+  );
+  return result.rows[0] || null;
+};
+
 export const getNextQueueNumberQuery = async (
   client,
   doctorId,
@@ -1120,6 +1155,7 @@ export const getPatientPendingAppointmentsQuery = async ({
   patient_id,
   status,
 }) => {
+  const onlyFuture = status !== APPOINTMENT_STATUS.Rejected;
   const result = await pool.query(
     `
     SELECT
@@ -1142,6 +1178,7 @@ export const getPatientPendingAppointmentsQuery = async ({
       a.is_walk_in,
       a.created_at,
       a.rescheduled_by,
+      a.cancellation_reason,
       rs.full_name AS appointment_rescheduled_by
     FROM appointments a
     JOIN users u ON u.id = a.patient_id
@@ -1151,7 +1188,7 @@ export const getPatientPendingAppointmentsQuery = async ({
     LEFT JOIN doctors d ON d.id = a.doctor_id
     WHERE a.patient_id = $1
       AND a.status = $2
-      AND a.appointment_date >= CURRENT_DATE
+      ${onlyFuture ? "AND a.appointment_date >= CURRENT_DATE" : ""}
     ORDER BY a.appointment_date ASC, a.created_at ASC
     `,
     [patient_id, status],

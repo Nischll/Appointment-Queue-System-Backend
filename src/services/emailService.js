@@ -3,6 +3,19 @@ import getMailConfig from "../config/mail.js";
 import { welcomePatientSignupTemplate } from "../templates/email/welcomePatientSignup.js";
 import { welcomePatientCreatedByAdminTemplate } from "../templates/email/welcomePatientCreatedByAdmin.js";
 import { welcomeStaffTemplate } from "../templates/email/welcomeStaff.js";
+import {
+  appointmentBookedTemplate,
+  appointmentRequestReceivedTemplate,
+  appointmentRejectedTemplate,
+  appointmentCancelledTemplate,
+  appointmentRescheduledTemplate,
+  appointmentFollowUpCreatedTemplate,
+  appointmentNoShowTemplate,
+} from "../templates/email/appointmentNotification.js";
+import {
+  clinicAppointmentRequestTemplate,
+  clinicNewPatientSignupTemplate,
+} from "../templates/email/clinicNotification.js";
 
 /** In-memory queue for non-blocking email sends (optional). */
 const emailQueue = [];
@@ -137,6 +150,144 @@ export async function sendWelcomeStaff(payload) {
   await sendMail({
     to,
     subject: `Your ${config.appName} staff account`,
+    html,
+  });
+}
+
+/**
+ * Send appointment notification to patient. Payload must include to (email) and appointment details.
+ * Safe to call with queueEmail. No-op if `to` is missing.
+ */
+function buildAppointmentPayload(payload) {
+  const config = getMailConfig();
+  return {
+    appName: config.appName,
+    loginUrl: config.loginUrl,
+    ...payload,
+  };
+}
+
+/** Appointment booked by staff or approved (patient had requested). */
+export async function sendAppointmentBooked(payload) {
+  const { to, ...rest } = payload;
+  if (!to) return;
+  const html = appointmentBookedTemplate(buildAppointmentPayload(rest));
+  const config = getMailConfig();
+  await sendMail({
+    to,
+    subject: `Appointment confirmed – ${config.appName}`,
+    html,
+  });
+}
+
+/** Patient submitted a request; confirmation that we received it. */
+export async function sendAppointmentRequestReceived(payload) {
+  const { to, ...rest } = payload;
+  if (!to) return;
+  const html = appointmentRequestReceivedTemplate(buildAppointmentPayload(rest));
+  const config = getMailConfig();
+  await sendMail({
+    to,
+    subject: `Appointment request received – ${config.appName}`,
+    html,
+  });
+}
+
+/** Appointment request rejected by staff. */
+export async function sendAppointmentRejected(payload) {
+  const { to, ...rest } = payload;
+  if (!to) return;
+  const html = appointmentRejectedTemplate(buildAppointmentPayload(rest));
+  const config = getMailConfig();
+  await sendMail({
+    to,
+    subject: `Appointment request update – ${config.appName}`,
+    html,
+  });
+}
+
+/** Appointment cancelled. */
+export async function sendAppointmentCancelled(payload) {
+  const { to, ...rest } = payload;
+  if (!to) return;
+  const html = appointmentCancelledTemplate(buildAppointmentPayload(rest));
+  const config = getMailConfig();
+  await sendMail({
+    to,
+    subject: `Appointment cancelled – ${config.appName}`,
+    html,
+  });
+}
+
+/** Appointment rescheduled. */
+export async function sendAppointmentRescheduled(payload) {
+  const { to, ...rest } = payload;
+  if (!to) return;
+  const html = appointmentRescheduledTemplate(buildAppointmentPayload(rest));
+  const config = getMailConfig();
+  await sendMail({
+    to,
+    subject: `Appointment rescheduled – ${config.appName}`,
+    html,
+  });
+}
+
+/** Follow-up appointment created. */
+export async function sendAppointmentFollowUpCreated(payload) {
+  const { to, ...rest } = payload;
+  if (!to) return;
+  const html = appointmentFollowUpCreatedTemplate(buildAppointmentPayload(rest));
+  const config = getMailConfig();
+  await sendMail({
+    to,
+    subject: `Follow-up appointment scheduled – ${config.appName}`,
+    html,
+  });
+}
+
+/** Appointment marked as no-show. */
+export async function sendAppointmentNoShow(payload) {
+  const { to, ...rest } = payload;
+  if (!to) return;
+  const html = appointmentNoShowTemplate(buildAppointmentPayload(rest));
+  const config = getMailConfig();
+  await sendMail({
+    to,
+    subject: `Appointment marked as no-show – ${config.appName}`,
+    html,
+  });
+}
+
+// ——— Clinic notifications (sent to CLINIC_EMAIL when configured) ———
+
+/** Notify clinic: new appointment request from patient. No-op if CLINIC_EMAIL not set. */
+export async function sendClinicAppointmentRequest(payload) {
+  const config = getMailConfig();
+  if (!config.clinicEmail) return;
+  const html = clinicAppointmentRequestTemplate({
+    appName: config.appName,
+    loginUrl: config.loginUrl,
+    ...payload,
+  });
+  await sendMail({
+    to: config.clinicEmail,
+    subject: `[${config.appName}] New appointment request – ${payload.patient_name || "Patient"}`,
+    html,
+  });
+}
+
+/** Notify clinic: new patient self-signup. No-op if CLINIC_EMAIL not set. */
+export async function sendClinicNewPatientSignup(payload) {
+  const config = getMailConfig();
+  if (!config.clinicEmail) return;
+  const html = clinicNewPatientSignupTemplate({
+    appName: config.appName,
+    loginUrl: config.loginUrl,
+    ...payload,
+  });
+  await sendMail({
+    to: config.clinicEmail,
+    subject: `[${config.appName}] New patient registration – ${payload.fullName || "Patient"}`,
     html,
   });
 }

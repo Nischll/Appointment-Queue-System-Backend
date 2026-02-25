@@ -13,6 +13,8 @@ const getMailConfig = () => {
 
   const enabled = Boolean(host && user && pass);
 
+  const clinicEmail = process.env.SMTP_USER || null;
+
   return {
     enabled,
     host: host || "localhost",
@@ -23,7 +25,9 @@ const getMailConfig = () => {
     /** Frontend login URL for "Login here" links in emails */
     loginUrl: process.env.APP_LOGIN_URL || "http://localhost:3000/login",
     /** Display name of the system in emails */
-    appName: process.env.APP_NAME || "AQMS",
+    appName: process.env.APP_NAME || "Clinic System",
+    /** Optional: email address to send clinic notifications (new requests, new patients, etc.) */
+    clinicEmail: typeof clinicEmail === "string" && clinicEmail.trim() ? clinicEmail.trim() : null,
   };
 };
 

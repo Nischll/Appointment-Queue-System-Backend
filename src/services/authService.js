@@ -2,7 +2,7 @@ import pool from "../config/db.js";
 import bcrypt from "bcrypt";
 import { generateAccessToken, generateRefreshToken } from "../utils/token.js";
 import USER_TYPE from "../enums/userType.enum.js";
-import { queueEmail, sendWelcomePatientSignup } from "./emailService.js";
+import { queueEmail, sendWelcomePatientSignup, sendClinicNewPatientSignup } from "./emailService.js";
 
 export const createPatientCore = async (client, payload) => {
   const {
@@ -101,6 +101,13 @@ export const signupService = async (dto) => {
         })
       );
     }
+    queueEmail(() =>
+      sendClinicNewPatientSignup({
+        fullName: dto.full_name,
+        username: dto.username,
+        email: dto.email,
+      })
+    );
 
     return userId;
   } catch (e) {

@@ -17,6 +17,7 @@ import {
   checkDuplicatePatientRequestQuery,
   checkInAppointmentQuery,
   completeAppointmentQuery,
+  getAppointmentDetailsForNotification,
   getAppointmentHistoryQuery,
   getLiveAppointmentQuery,
   getNextQueueNumberQuery,
@@ -33,6 +34,17 @@ import {
   updateAppointmentQuery,
 } from "../models/appointmentModel.js";
 import { predictWaitTimeService } from "./predictWaitTimeService.js";
+import { queueEmail } from "./emailService.js";
+import {
+  sendAppointmentBooked,
+  sendAppointmentRequestReceived,
+  sendAppointmentRejected,
+  sendAppointmentCancelled,
+  sendAppointmentRescheduled,
+  sendAppointmentFollowUpCreated,
+  sendAppointmentNoShow,
+  sendClinicAppointmentRequest,
+} from "./emailService.js";
 
 const APPOINTMENT_DURATION = {
   COUNSELLING: 30,
@@ -40,6 +52,23 @@ const APPOINTMENT_DURATION = {
   FOLLOW_UP: 10,
   OPERATION: 60,
 };
+
+/** Queue appointment notification email to patient if patient_email exists. */
+async function notifyPatientAppointment(appointmentId, sendFn) {
+  if (!appointmentId) return;
+  const details = await getAppointmentDetailsForNotification(appointmentId);
+  if (!details?.patient_email) return;
+  const payload = { to: details.patient_email, ...details };
+  queueEmail(() => sendFn(payload));
+}
+
+/** Queue email to clinic (CLINIC_EMAIL) when a patient submits an appointment request. */
+async function notifyClinicAppointmentRequest(appointmentId) {
+  if (!appointmentId) return;
+  const details = await getAppointmentDetailsForNotification(appointmentId);
+  if (!details) return;
+  queueEmail(() => sendClinicAppointmentRequest(details));
+}
 
 export const staffBookAppointmentService = async (staffId, data) => {
   const client = await pool.connect();
@@ -81,6 +110,7 @@ export const staffBookAppointmentService = async (staffId, data) => {
 
     await client.query("COMMIT");
 
+    notifyPatientAppointment(result.id, sendAppointmentBooked);
     return result;
   } catch (e) {
     await client.query("ROLLBACK");
@@ -235,6 +265,7 @@ export const cancelAppointmentService = async (
 
     await client.query("COMMIT");
 
+    notifyPatientAppointment(appointmentId, sendAppointmentCancelled);
     return cancelled;
   } catch (error) {
     await client.query("ROLLBACK");
@@ -271,7 +302,7 @@ export const noShowAppointmentService = async (appointmentId) => {
     const noShow = await noShowAppointmentQuery(client, appointmentId);
 
     await client.query("COMMIT");
-
+    notifyPatientAppointment(appointmentId, sendAppointmentNoShow);
     return noShow;
   } catch (error) {
     await client.query("ROLLBACK");
@@ -550,6 +581,7 @@ export const approveAppointmentService = async (appointmentId, data) => {
     });
 
     await client.query("COMMIT");
+    notifyPatientAppointment(appointmentId, sendAppointmentBooked);
     return approved;
   } catch (err) {
     await client.query("ROLLBACK");
@@ -582,6 +614,7 @@ export const rejectAppointmentService = async (appointmentId, data) => {
     });
 
     await client.query("COMMIT");
+    notifyPatientAppointment(appointmentId, sendAppointmentRejected);
     return rejected;
   } catch (err) {
     await client.query("ROLLBACK");
@@ -650,7 +683,7 @@ export const createFollowUpAppointmentService = async (
     );
 
     await client.query("COMMIT");
-
+    notifyPatientAppointment(result.id, sendAppointmentFollowUpCreated);
     return result;
   } catch (err) {
     await client.query("ROLLBACK");
@@ -692,24 +725,38 @@ export const rescheduleAppointmentService = async (
         data.appointment_type || appointment.appointment_type
       ];
 
+    const doctorId = data.doctor_id ?? appointment.doctor_id;
+    const clinicId = data.clinic_id ?? appointment.clinic_id;
+    const departmentId = data.department_id ?? appointment.department_id;
+
     await checkDoctorAvailability(client, {
-      doctor_id: data.doctor_id || appointment.doctor_id,
-      clinic_id: data.clinic_id || appointment.clinic_id,
-      department_id: data.department_id || appointment.department_id,
+      doctor_id: doctorId,
+      clinic_id: clinicId,
+      department_id: departmentId,
       appointment_date: data.appointment_date,
       scheduled_start_time: data.scheduled_start_time,
       estimated_duration: estimatedDuration,
       exclude_appointment_id: appointmentId,
     });
 
+    const payload = {
+      appointment_date: data.appointment_date,
+      scheduled_start_time: data.scheduled_start_time,
+      doctor_id: doctorId,
+      clinic_id: clinicId,
+      department_id: departmentId,
+      notes: data.notes,
+    };
+
     const result = await rescheduleAppointmentQuery(
       client,
       appointmentId,
       staffId,
-      data,
+      payload,
     );
 
     await client.query("COMMIT");
+    notifyPatientAppointment(appointmentId, sendAppointmentRescheduled);
     return result;
   } catch (e) {
     await client.query("ROLLBACK");
@@ -750,6 +797,8 @@ export const patientBookAppointmentService = async (patientId, dto) => {
     const result = await addPatientAppoinmentQuery(client, patientId, dto);
 
     await client.query("COMMIT");
+    notifyPatientAppointment(result.id, sendAppointmentRequestReceived);
+    notifyClinicAppointmentRequest(result.id);
     return result;
   } catch (err) {
     await client.query("ROLLBACK");

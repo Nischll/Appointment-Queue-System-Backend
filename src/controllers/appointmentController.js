@@ -423,14 +423,16 @@ export const getPatientPendingAppointments = async (req, res) => {
     const patientId = req.user.id;
 
     if (
-      ![APPOINTMENT_STATUS.Requested, APPOINTMENT_STATUS.Booked].includes(
-        status,
-      )
+      ![
+        APPOINTMENT_STATUS.Requested,
+        APPOINTMENT_STATUS.Booked,
+        APPOINTMENT_STATUS.Rejected,
+      ].includes(status)
     ) {
       return sendResponse(
         res,
         400,
-        "Invalid status. Allowed: REQUESTED, BOOKED",
+        "Invalid status. Allowed: REQUESTED, BOOKED, REJECTED",
         null,
       );
     }
