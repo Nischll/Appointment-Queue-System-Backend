@@ -2,7 +2,7 @@ import { SignupDto } from "../dto/signupDto.js";
 import {
   createPatientService,
   deletePatientService,
-  getAllPatientService,
+  getAllPatientsPaginatedService,
   getPatientByIdService,
   updatePatientService,
 } from "../services/patientService.js";
@@ -21,7 +21,10 @@ export const createPatient = async (req, res) => {
 
 export const getAllPatient = async (req, res) => {
   try {
-    const data = await getAllPatientService();
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const search = req.query.search ?? "";
+    const data = await getAllPatientsPaginatedService(page, limit, search);
     return sendResponse(res, 200, "Patient fetched successfully", data);
   } catch (error) {
     console.log("error getting patients", error);

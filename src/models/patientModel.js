@@ -1,30 +1,66 @@
 import pool from "../config/db.js";
 
+
+const patientListSelect = `
+  SELECT 
+    u.id,
+    u.full_name, 
+    u.email,
+    u.username,
+    u.phone,
+    u.gender,
+    pf.date_of_birth::text AS dob,
+    pf.age,
+    pf.address,
+    pf.blood_group,
+    pf.emergency_contact_name,
+    pf.emergency_contact_phone
+  FROM users u
+  LEFT JOIN patient_profiles pf ON pf.user_id = u.id
+  WHERE u.user_type = 'EXTERNAL' AND u.isactive = TRUE
+`;
+const patientListOrder = `ORDER BY u.id ASC`;
+
 export const getAllPatientQuery = async () => {
   const result = await pool.query(
-    `
-    SELECT 
-      u.id,
-      u.full_name, 
-      u.email,
-      u.username,
-      u.phone,
-      u.gender,
-      pf.date_of_birth::text AS dob,
-      pf.age,
-      pf.address,
-      pf.blood_group,
-      pf.emergency_contact_name,
-      pf.emergency_contact_phone
-    FROM users u
-    LEFT JOIN patient_profiles pf ON pf.user_id = u.id
-    WHERE u.user_type = 'EXTERNAL' AND u.isactive = TRUE
-    ORDER BY u.id ASC
-    `
+    `${patientListSelect} ${patientListOrder}`
   );
-
   return result.rows;
 };
+
+export const getPatientsPaginatedQuery = async ({ limit, offset, search }) => {
+  const baseWhere = `WHERE u.user_type = 'EXTERNAL' AND u.isactive = TRUE`;
+  const searchWhere = search && search.trim()
+    ? ` AND u.full_name ILIKE $1`
+    : "";
+  const countParams = search && search.trim() ? [`%${search.trim()}%`] : [];
+  const countResult = await pool.query(
+    `SELECT COUNT(*) AS total FROM users u
+     LEFT JOIN patient_profiles pf ON pf.user_id = u.id
+     ${baseWhere}${searchWhere}`,
+    countParams
+  );
+  const total = parseInt(countResult.rows[0].total, 10);
+
+  const selectParams = search && search.trim()
+    ? [`%${search.trim()}%`, limit, offset]
+    : [limit, offset];
+  const selectWhere = search && search.trim()
+    ? ` AND u.full_name ILIKE $1`
+    : "";
+  const limitOffsetPlaceholders = search && search.trim()
+    ? `LIMIT $2 OFFSET $3`
+    : `LIMIT $1 OFFSET $2`;
+
+  const result = await pool.query(
+    `${patientListSelect}${selectWhere} ${patientListOrder}
+     ${limitOffsetPlaceholders}`,
+    selectParams
+  );
+
+  return { rows: result.rows, total };
+};
+
 
 export const getPatientByIdQuery = async (patientId) => {
   const result = await pool.query(

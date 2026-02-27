@@ -1,7 +1,7 @@
 import pool from "../config/db.js";
 import {
   deletePatientQuery,
-  getAllPatientQuery,
+  getPatientsPaginatedQuery,
   getPatientByIdQuery,
   updatePatientQuery,
 } from "../models/patientModel.js";
@@ -43,8 +43,27 @@ export const createPatientService = async (dto) => {
   }
 };
 
-export const getAllPatientService = async () => {
-  return await getAllPatientQuery();
+export const getAllPatientsPaginatedService = async (page = 1, limit = 10, search = "") => {
+  const safePage = Math.max(1, parseInt(page, 10) || 1);
+  const safeLimit = Math.max(1, Math.min(100, parseInt(limit, 10) || 10));
+  const offset = (safePage - 1) * safeLimit;
+  const searchTerm = typeof search === "string" ? search.trim() : "";
+
+  const { rows, total } = await getPatientsPaginatedQuery({
+    limit: safeLimit,
+    offset,
+    search: searchTerm || undefined,
+  });
+
+  return {
+    data: rows,
+    pagination: {
+      page: safePage,
+      limit: safeLimit,
+      total,
+      total_pages: Math.ceil(total / safeLimit),
+    },
+  };
 };
 
 export const getPatientByIdService = async (patientId) => {
