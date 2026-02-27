@@ -442,6 +442,38 @@ export const updateAppointmentService = async (appointmentId, data) => {
       (data.clinic_id && data.clinic_id !== existing.clinic_id) ||
       (data.department_id && data.department_id !== existing.department_id);
 
+    const timeOrDoctorChanged =
+      queueAffectingFieldsChanged ||
+      data.scheduled_start_time !== undefined ||
+      data.estimated_duration !== undefined ||
+      data.appointment_type !== undefined;
+
+    if (timeOrDoctorChanged) {
+      const doctorId = data.doctor_id ?? existing.doctor_id;
+      const clinicId = data.clinic_id ?? existing.clinic_id;
+      const departmentId = data.department_id ?? existing.department_id;
+      const scheduledStartTime =
+        data.scheduled_start_time ?? existing.scheduled_start_time;
+      const appointmentType =
+        data.appointment_type ?? existing.appointment_type;
+      const estimatedDuration =
+        data.estimated_duration ??
+        APPOINTMENT_DURATION[appointmentType] ??
+        existing.estimated_duration;
+
+      if (scheduledStartTime != null && estimatedDuration != null) {
+        await checkDoctorAvailability(client, {
+          doctor_id: doctorId,
+          clinic_id: clinicId,
+          department_id: departmentId,
+          appointment_date: existing.appointment_date,
+          scheduled_start_time: scheduledStartTime,
+          estimated_duration: estimatedDuration,
+          exclude_appointment_id: appointmentId,
+        });
+      }
+    }
+
     if (queueAffectingFieldsChanged) {
       const newDoctorId = data.doctor_id || existing.doctor_id;
       const newClinicId = data.clinic_id || existing.clinic_id;
@@ -569,10 +601,26 @@ export const approveAppointmentService = async (appointmentId, data) => {
       appointment_type,
     );
 
-    const estimatedDuration = APPOINTMENT_DURATION[data.appointment_type];
+    const estimatedDuration =
+      APPOINTMENT_DURATION[data.appointment_type || existing.appointment_type];
     if (!estimatedDuration) {
       throw new Error("Invalid appointment type");
     }
+
+    const scheduledStartTime =
+      data.scheduled_start_time ?? existing.scheduled_start_time;
+    if (scheduledStartTime != null) {
+      await checkDoctorAvailability(client, {
+        doctor_id: doctorId,
+        clinic_id: clinicId,
+        department_id: departmentId,
+        appointment_date: existing.appointment_date,
+        scheduled_start_time: scheduledStartTime,
+        estimated_duration: estimatedDuration,
+        exclude_appointment_id: appointmentId,
+      });
+    }
+
     const approved = await approveAppointmentQuery(client, appointmentId, {
       ...data,
       queue_number: queueNumber,

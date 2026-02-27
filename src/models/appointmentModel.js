@@ -33,6 +33,7 @@ export const checkDoctorAvailability = async (
     appointment_date,
     scheduled_start_time,
     estimated_duration,
+    exclude_appointment_id,
   },
 ) => {
   //Check doctor shift
@@ -63,7 +64,8 @@ export const checkDoctorAvailability = async (
     throw new Error("Doctor is not available during the selected time");
   }
 
-  //Check overlapping appointments
+  //Check overlapping appointments (optionally exclude one appointment, e.g. when rescheduling)
+  const hasExclude = exclude_appointment_id != null;
   const overlapResult = await client.query(
     `
     SELECT 1
@@ -71,6 +73,7 @@ export const checkDoctorAvailability = async (
     WHERE doctor_id = $1
       AND appointment_date = $2
       AND status IN ($5, $6, $7)
+      ${hasExclude ? "AND id <> $8" : ""}
       AND (
         scheduled_start_time,
         scheduled_start_time + (estimated_duration || ' minutes')::interval
@@ -80,15 +83,26 @@ export const checkDoctorAvailability = async (
       )
     LIMIT 1
     `,
-    [
-      doctor_id,
-      appointment_date,
-      scheduled_start_time,
-      estimated_duration,
-      APPOINTMENT_STATUS.Booked,
-      APPOINTMENT_STATUS.In_progress,
-      APPOINTMENT_STATUS.Checked_In,
-    ],
+    hasExclude
+      ? [
+          doctor_id,
+          appointment_date,
+          scheduled_start_time,
+          estimated_duration,
+          APPOINTMENT_STATUS.Booked,
+          APPOINTMENT_STATUS.In_progress,
+          APPOINTMENT_STATUS.Checked_In,
+          exclude_appointment_id,
+        ]
+      : [
+          doctor_id,
+          appointment_date,
+          scheduled_start_time,
+          estimated_duration,
+          APPOINTMENT_STATUS.Booked,
+          APPOINTMENT_STATUS.In_progress,
+          APPOINTMENT_STATUS.Checked_In,
+        ],
   );
 
   if (overlapResult.rowCount > 0) {
