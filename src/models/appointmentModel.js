@@ -64,23 +64,17 @@ export const checkDoctorAvailability = async (
     throw new Error("Doctor is not available during the selected time");
   }
 
-  //Check overlapping appointments (optionally exclude one appointment, e.g. when rescheduling)
+  // Block only same start time: no other appointment for this doctor on this date at this exact time
   const hasExclude = exclude_appointment_id != null;
-  const overlapResult = await client.query(
+  const sameTimeResult = await client.query(
     `
     SELECT 1
     FROM appointments
     WHERE doctor_id = $1
       AND appointment_date = $2
-      AND status IN ($5, $6, $7)
-      ${hasExclude ? "AND id <> $8" : ""}
-      AND (
-        scheduled_start_time,
-        scheduled_start_time + (estimated_duration || ' minutes')::interval
-      ) OVERLAPS (
-        $3::time,
-        $3::time + ($4 || ' minutes')::interval
-      )
+      AND scheduled_start_time = $3
+      AND status IN ($4, $5, $6)
+      ${hasExclude ? "AND id <> $7" : ""}
     LIMIT 1
     `,
     hasExclude
@@ -88,7 +82,6 @@ export const checkDoctorAvailability = async (
           doctor_id,
           appointment_date,
           scheduled_start_time,
-          estimated_duration,
           APPOINTMENT_STATUS.Booked,
           APPOINTMENT_STATUS.In_progress,
           APPOINTMENT_STATUS.Checked_In,
@@ -98,15 +91,14 @@ export const checkDoctorAvailability = async (
           doctor_id,
           appointment_date,
           scheduled_start_time,
-          estimated_duration,
           APPOINTMENT_STATUS.Booked,
           APPOINTMENT_STATUS.In_progress,
           APPOINTMENT_STATUS.Checked_In,
         ],
   );
 
-  if (overlapResult.rowCount > 0) {
-    throw new Error("Doctor already has an appointment in this time slot");
+  if (sameTimeResult.rowCount > 0) {
+    throw new Error("Doctor already has an appointment at this time");
   }
 
   return true;
@@ -1209,4 +1201,28 @@ export const getPatientPendingAppointmentsQuery = async ({
   );
 
   return { rows: result.rows };
+};
+
+/** List appointments for a doctor on a given date (for booking/update UI to show occupied slots). Optional clinicId. */
+export const getDoctorAppointmentsByDateQuery = async (
+  doctorId,
+  date,
+  clinicId = null,
+) => {
+  const hasClinic = clinicId != null;
+  const result = await pool.query(
+    `
+    SELECT a.id, a.scheduled_start_time, a.estimated_duration, a.appointment_type,
+           a.status, u.full_name AS patient_name
+    FROM appointments a
+    JOIN users u ON u.id = a.patient_id
+    WHERE a.doctor_id = $1
+      AND a.appointment_date = $2
+      AND a.status NOT IN ('CANCELLED', 'REJECTED', 'NO_SHOW')
+      ${hasClinic ? "AND a.clinic_id = $3" : ""}
+    ORDER BY a.scheduled_start_time ASC
+    `,
+    hasClinic ? [doctorId, date, clinicId] : [doctorId, date],
+  );
+  return result.rows;
 };

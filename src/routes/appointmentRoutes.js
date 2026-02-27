@@ -10,6 +10,7 @@ import {
   staffBookAppointment,
   startAppointment,
   getAppointmentHistory,
+  getDoctorAppointmentsByDate,
   updateAppointment,
   approveAppointment,
   rejectAppointment,
@@ -61,6 +62,12 @@ router.get(
   authenticate,
   authorizeModule("AM", "read"),
   todayAppointmentsWithWaitingTime,
+);
+router.get(
+  "/doctor-schedule",
+  authenticate,
+  authorizeModule("AM", "read"),
+  getDoctorAppointmentsByDate,
 );
 router.get(
   "/history",

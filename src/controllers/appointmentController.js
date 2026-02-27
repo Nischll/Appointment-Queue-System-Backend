@@ -10,6 +10,7 @@ import {
   cancelAppointmentService,
   checkInAppointmentService,
   CompleteAppointmentService,
+  getDoctorAppointmentsByDateService,
   getLiveAppointmentService,
   noShowAppointmentService,
   staffBookAppointmentService,
@@ -450,6 +451,26 @@ export const getPatientPendingAppointments = async (req, res) => {
     );
   } catch (error) {
     console.log("error fetching upcoming appointments", error);
+    return sendResponse(res, error.statusCode || 500, error.message, null);
+  }
+};
+
+export const getDoctorAppointmentsByDate = async (req, res) => {
+  try {
+    const { doctor_id, date, clinic_id } = req.query;
+    const data = await getDoctorAppointmentsByDateService({
+      doctor_id,
+      date,
+      clinic_id,
+    });
+    return sendResponse(
+      res,
+      200,
+      "Doctor appointments for date fetched successfully.",
+      data,
+    );
+  } catch (error) {
+    console.log("error fetching doctor appointments by date", error);
     return sendResponse(res, error.statusCode || 500, error.message, null);
   }
 };

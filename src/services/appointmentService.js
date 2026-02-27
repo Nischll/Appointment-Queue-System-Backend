@@ -19,6 +19,7 @@ import {
   completeAppointmentQuery,
   getAppointmentDetailsForNotification,
   getAppointmentHistoryQuery,
+  getDoctorAppointmentsByDateQuery,
   getLiveAppointmentQuery,
   getNextQueueNumberQuery,
   getPatientAppointmentHistoryQuery,
@@ -950,4 +951,20 @@ export const getPatientPendingAppointmentsService = async ({
   const mapped = rows.map(mapAppointmentHistory);
 
   return mapped;
+};
+
+export const getDoctorAppointmentsByDateService = async ({
+  doctor_id,
+  date,
+  clinic_id,
+}) => {
+  if (!doctor_id || !date) {
+    throw new Error("doctor_id and date are required");
+  }
+  const clinicId = clinic_id ? parseInt(clinic_id, 10) : null;
+  return getDoctorAppointmentsByDateQuery(
+    parseInt(doctor_id, 10),
+    date,
+    clinicId,
+  );
 };
