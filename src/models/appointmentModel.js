@@ -107,8 +107,6 @@ export const checkDoctorAvailability = async (
 export const assignQueueNumberQuery = async (client, data) => {
   const { clinic_id, department_id, doctor_id, appointment_date } = data;
 
-  // await client.query("BEGIN");
-
   const result = await client.query(
     `
     SELECT COALESCE(MAX(queue_number), 0) + 1 AS next_queue
@@ -122,6 +120,39 @@ export const assignQueueNumberQuery = async (client, data) => {
     [clinic_id, department_id, doctor_id, appointment_date],
   );
   return result.rows[0].next_queue;
+};
+
+/**
+ * Renumber queue for a given doctor/clinic/department/date so that
+ * queue_number reflects order by scheduled_start_time (earliest = 1).
+ * Only affects appointments that are not CANCELLED or NO_SHOW.
+ */
+export const renumberQueueByScheduledTimeQuery = async (
+  client,
+  doctorId,
+  clinicId,
+  departmentId,
+  appointmentDate,
+) => {
+  await client.query(
+    `
+    WITH ordered AS (
+      SELECT id,
+        ROW_NUMBER() OVER (ORDER BY scheduled_start_time ASC, id ASC) AS rn
+      FROM appointments
+      WHERE doctor_id = $1
+        AND clinic_id = $2
+        AND department_id = $3
+        AND appointment_date = $4
+        AND status NOT IN ('CANCELLED', 'NO_SHOW')
+    )
+    UPDATE appointments a
+    SET queue_number = ordered.rn
+    FROM ordered
+    WHERE a.id = ordered.id
+    `,
+    [doctorId, clinicId, departmentId, appointmentDate],
+  );
 };
 
 // ADD APPOINTMENT

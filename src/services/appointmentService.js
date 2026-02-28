@@ -35,6 +35,7 @@ import {
   noShowAppointmentQuery,
   rejectAppointmentQuery,
   rescheduleAppointmentQuery,
+  renumberQueueByScheduledTimeQuery,
   startAppointmentQuery,
   updateAppointmentQuery,
 } from "../models/appointmentModel.js";
@@ -117,6 +118,14 @@ export const staffBookAppointmentService = async (staffId, data) => {
       data,
       queueNumber,
       estimatedDuration,
+    );
+
+    await renumberQueueByScheduledTimeQuery(
+      client,
+      data.doctor_id,
+      data.clinic_id,
+      data.department_id,
+      data.appointment_date,
     );
 
     await client.query("COMMIT");
@@ -274,6 +283,14 @@ export const cancelAppointmentService = async (
       reason,
     );
 
+    await renumberQueueByScheduledTimeQuery(
+      client,
+      existAppointment.doctor_id,
+      existAppointment.clinic_id,
+      existAppointment.department_id,
+      existAppointment.appointment_date,
+    );
+
     await client.query("COMMIT");
 
     notifyPatientAppointment(appointmentId, sendAppointmentCancelled);
@@ -311,6 +328,14 @@ export const noShowAppointmentService = async (appointmentId) => {
     }
 
     const noShow = await noShowAppointmentQuery(client, appointmentId);
+
+    await renumberQueueByScheduledTimeQuery(
+      client,
+      existAppointment.doctor_id,
+      existAppointment.clinic_id,
+      existAppointment.department_id,
+      existAppointment.appointment_date,
+    );
 
     await client.query("COMMIT");
     notifyPatientAppointment(appointmentId, sendAppointmentNoShow);
@@ -516,6 +541,16 @@ export const updateAppointmentService = async (appointmentId, data) => {
 
     const updated = await updateAppointmentQuery(client, appointmentId, data);
 
+    if (timeOrDoctorChanged) {
+      await renumberQueueByScheduledTimeQuery(
+        client,
+        data.doctor_id ?? existing.doctor_id,
+        data.clinic_id ?? existing.clinic_id,
+        data.department_id ?? existing.department_id,
+        existing.appointment_date,
+      );
+    }
+
     await client.query("COMMIT");
     return updated;
   } catch (err) {
@@ -658,6 +693,14 @@ export const approveAppointmentService = async (appointmentId, data) => {
       estimated_duration: estimatedDuration,
     });
 
+    await renumberQueueByScheduledTimeQuery(
+      client,
+      doctorId,
+      clinicId,
+      departmentId,
+      existing.appointment_date,
+    );
+
     await client.query("COMMIT");
     notifyPatientAppointment(appointmentId, sendAppointmentBooked);
     return approved;
@@ -761,6 +804,14 @@ export const createFollowUpAppointmentService = async (
       estimatedDuration,
     );
 
+    await renumberQueueByScheduledTimeQuery(
+      client,
+      doctorId,
+      previous.clinic_id,
+      previous.department_id,
+      dto.appointment_date,
+    );
+
     await client.query("COMMIT");
     notifyPatientAppointment(result.id, sendAppointmentFollowUpCreated);
     return result;
@@ -837,6 +888,14 @@ export const rescheduleAppointmentService = async (
       appointmentId,
       staffId,
       payload,
+    );
+
+    await renumberQueueByScheduledTimeQuery(
+      client,
+      doctorId,
+      clinicId,
+      departmentId,
+      data.appointment_date,
     );
 
     await client.query("COMMIT");
