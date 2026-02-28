@@ -5,7 +5,10 @@ import {
   mapAppointmentWithPrediction,
   mapPatientAppointmentWithPrediction,
 } from "../mappers/appointmentMapper.js";
-import { assertDateNotInPast } from "../utils/appointmentDateTime.js";
+import {
+  assertDateNotInPast,
+  to24HourTime,
+} from "../utils/appointmentDateTime.js";
 import {
   addPatientAppoinmentQuery,
   approveAppointmentQuery,
@@ -74,6 +77,9 @@ async function notifyClinicAppointmentRequest(appointmentId) {
 }
 
 export const staffBookAppointmentService = async (staffId, data) => {
+  if (data.scheduled_start_time != null && data.scheduled_start_time !== "") {
+    data.scheduled_start_time = to24HourTime(data.scheduled_start_time);
+  }
   assertNotInPast(data.appointment_date, data.scheduled_start_time);
 
   const client = await pool.connect();
@@ -432,9 +438,15 @@ export const updateAppointmentService = async (appointmentId, data) => {
       throw new Error("Only today's appointments can be updated.");
     }
 
-    const effectiveStartTime =
+    let effectiveStartTime =
       data.scheduled_start_time ?? existing.scheduled_start_time;
+    if (effectiveStartTime != null && effectiveStartTime !== "") {
+      effectiveStartTime = to24HourTime(effectiveStartTime);
+    }
     assertNotInPast(existing.appointment_date, effectiveStartTime);
+    if (data.scheduled_start_time != null && data.scheduled_start_time !== "") {
+      data.scheduled_start_time = to24HourTime(data.scheduled_start_time);
+    }
 
     // Only editable statuses
     if (
@@ -461,8 +473,11 @@ export const updateAppointmentService = async (appointmentId, data) => {
       const doctorId = data.doctor_id ?? existing.doctor_id;
       const clinicId = data.clinic_id ?? existing.clinic_id;
       const departmentId = data.department_id ?? existing.department_id;
-      const scheduledStartTime =
+      let scheduledStartTime =
         data.scheduled_start_time ?? existing.scheduled_start_time;
+      if (scheduledStartTime != null && scheduledStartTime !== "") {
+        scheduledStartTime = to24HourTime(scheduledStartTime);
+      }
       const appointmentType =
         data.appointment_type ?? existing.appointment_type;
       const estimatedDuration =
@@ -592,8 +607,12 @@ export const approveAppointmentService = async (appointmentId, data) => {
       throw new Error("Only REQUESTED appointments can be approved.");
     }
 
-    const scheduledStartTime =
+    let scheduledStartTime =
       data.scheduled_start_time ?? existing.scheduled_start_time;
+    if (scheduledStartTime != null && scheduledStartTime !== "") {
+      scheduledStartTime = to24HourTime(scheduledStartTime);
+      data.scheduled_start_time = scheduledStartTime;
+    }
     assertNotInPast(existing.appointment_date, scheduledStartTime);
 
     const doctorId = data.doctor_id || existing.doctor_id;
@@ -708,6 +727,9 @@ export const createFollowUpAppointmentService = async (
       );
     }
 
+    if (dto.scheduled_start_time != null && dto.scheduled_start_time !== "") {
+      dto.scheduled_start_time = to24HourTime(dto.scheduled_start_time);
+    }
     assertNotInPast(dto.appointment_date, dto.scheduled_start_time);
 
     const doctorId = dto.doctor_id || previous.doctor_id;
@@ -777,6 +799,9 @@ export const rescheduleAppointmentService = async (
       throw new Error("Appointment cannot be rescheduled");
     }
 
+    if (data.scheduled_start_time != null && data.scheduled_start_time !== "") {
+      data.scheduled_start_time = to24HourTime(data.scheduled_start_time);
+    }
     assertNotInPast(data.appointment_date, data.scheduled_start_time);
 
     const estimatedDuration =
@@ -836,6 +861,9 @@ export const patientBookAppointmentService = async (patientId, dto) => {
     if (!dto.notes) throw new Error("Missing notes fields");
     if (!dto.preferred_date) throw new Error("Missing date fields");
 
+    if (dto.preferred_time != null && dto.preferred_time !== "") {
+      dto.preferred_time = to24HourTime(dto.preferred_time);
+    }
     assertNotInPast(dto.preferred_date, dto.preferred_time);
 
     const existing = await checkDuplicatePatientRequestQuery(

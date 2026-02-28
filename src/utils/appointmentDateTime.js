@@ -13,11 +13,44 @@ function toDateString(appointmentDate) {
 }
 
 /**
+ * Converts a time string to 24-hour HH:MM:SS.
+ * Accepts: "11:00 AM", "2:30 PM", "09:30" (24h), "14:45:00" (24h).
+ * Use when validating or before sending time to the DB so 12-hour format is handled.
+ */
+export function to24HourTime(timeStr) {
+  if (!timeStr || typeof timeStr !== "string") return "00:00:00";
+  const s = timeStr.trim().toUpperCase();
+  const am = s.endsWith(" AM");
+  const pm = s.endsWith(" PM");
+  if (am || pm) {
+    const withoutAmPm = (am ? s.slice(0, -3) : s.slice(0, -3)).trim();
+    const parts = withoutAmPm.split(":");
+    const hour = parseInt(parts[0], 10);
+    const min = parseInt(parts[1], 10) || 0;
+    const sec = parseInt(parts[2], 10) || 0;
+    if (Number.isNaN(hour)) return "00:00:00";
+    let h24 = hour;
+    if (am && hour === 12) h24 = 0;
+    else if (pm && hour !== 12) h24 = hour + 12;
+    return `${String(h24).padStart(2, "0")}:${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  }
+  // Already 24h: "09:30" or "14:45:00"
+  const parts = s.split(":");
+  if (parts.length >= 2) {
+    const h = String(parseInt(parts[0], 10) || 0).padStart(2, "0");
+    const m = String(parseInt(parts[1], 10) || 0).padStart(2, "0");
+    const sec = (parts[2] != null && parts[2].trim() !== "") ? String(parseInt(parts[2], 10) || 0).padStart(2, "0") : "00";
+    return `${h}:${m}:${sec}`;
+  }
+  return "00:00:00";
+}
+
+/**
  * Validates that an appointment slot (date + optional time) is not in the past.
  * Used to block booking, update, approve, and reschedule for past date/time.
  *
  * @param {string|Date} appointmentDate - Date string YYYY-MM-DD or Date object
- * @param {string|null|undefined} scheduledStartTime - Time string (HH:MM or HH:MM:SS), or null/undefined for date-only
+ * @param {string|null|undefined} scheduledStartTime - Time string (e.g. "11:00 AM", "09:30", "14:00:00"), or null/undefined for date-only
  * @returns {boolean} - true if the slot is in the past (invalid)
  */
 export function isAppointmentInPast(appointmentDate, scheduledStartTime) {
@@ -29,12 +62,7 @@ export function isAppointmentInPast(appointmentDate, scheduledStartTime) {
       ? String(scheduledStartTime).trim()
       : "00:00:00";
 
-  // Normalize time to HH:MM:SS for parsing (e.g. "09:30" -> "09:30:00")
-  const timeParts = timeStr.split(":");
-  const normalizedTime =
-    timeParts.length >= 2
-      ? `${timeParts[0].padStart(2, "0")}:${timeParts[1].padStart(2, "0")}:${(timeParts[2] || "00").padStart(2, "0")}`
-      : "00:00:00";
+  const normalizedTime = to24HourTime(timeStr);
 
   let appointmentMoment;
   try {
