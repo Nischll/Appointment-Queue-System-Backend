@@ -88,8 +88,8 @@ export const getAppointmentCountByStatusQuery = async (clinicId) => {
 /** Counts for dashboard summary (all-time and today). Optional clinicId filters appointment-based stats. */
 export const getSummaryCountsQuery = async (clinicId = null) => {
   const hasClinic = clinicId != null;
-  const apptCondition = hasClinic ? "AND clinic_id = $1" : "";
-  const apptParams = hasClinic ? [clinicId] : [];
+  const apptConditionOnly = hasClinic ? "AND clinic_id = $1" : "";
+  const apptConditionWithStatus = hasClinic ? "AND clinic_id = $2" : "";
 
   const [patients, clinics, doctors, todayAppointments, pendingRequests, completedToday] = await Promise.all([
     pool.query(
@@ -98,15 +98,15 @@ export const getSummaryCountsQuery = async (clinicId = null) => {
     pool.query(`SELECT COUNT(*) AS c FROM clinics WHERE is_active = TRUE`),
     pool.query(`SELECT COUNT(*) AS c FROM doctors WHERE status = TRUE`),
     pool.query(
-      `SELECT COUNT(*) AS c FROM appointments WHERE appointment_date = CURRENT_DATE AND status NOT IN ('CANCELLED', 'REJECTED') ${apptCondition}`,
-      apptParams
+      `SELECT COUNT(*) AS c FROM appointments WHERE appointment_date = CURRENT_DATE AND status NOT IN ('CANCELLED', 'REJECTED') ${apptConditionOnly}`,
+      hasClinic ? [clinicId] : []
     ),
     pool.query(
-      `SELECT COUNT(*) AS c FROM appointments WHERE status = $1 AND appointment_date >= CURRENT_DATE ${apptCondition}`,
+      `SELECT COUNT(*) AS c FROM appointments WHERE status = $1 AND appointment_date >= CURRENT_DATE ${apptConditionWithStatus}`,
       hasClinic ? [APPOINTMENT_STATUS.Requested, clinicId] : [APPOINTMENT_STATUS.Requested]
     ),
     pool.query(
-      `SELECT COUNT(*) AS c FROM appointments WHERE appointment_date = CURRENT_DATE AND status = $1 ${apptCondition}`,
+      `SELECT COUNT(*) AS c FROM appointments WHERE appointment_date = CURRENT_DATE AND status = $1 ${apptConditionWithStatus}`,
       hasClinic ? [APPOINTMENT_STATUS.Completed, clinicId] : [APPOINTMENT_STATUS.Completed]
     ),
   ]);
