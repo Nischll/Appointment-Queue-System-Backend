@@ -5,6 +5,7 @@ import {
   mapAppointmentWithPrediction,
   mapPatientAppointmentWithPrediction,
 } from "../mappers/appointmentMapper.js";
+import { assertDateNotInPast } from "../utils/appointmentDateTime.js";
 import {
   addPatientAppoinmentQuery,
   approveAppointmentQuery,
@@ -46,6 +47,7 @@ import {
   sendAppointmentNoShow,
   sendClinicAppointmentRequest,
 } from "./emailService.js";
+import { assertNotInPast } from "../utils/appointmentDateTime.js";
 
 const APPOINTMENT_DURATION = {
   COUNSELLING: 30,
@@ -72,6 +74,8 @@ async function notifyClinicAppointmentRequest(appointmentId) {
 }
 
 export const staffBookAppointmentService = async (staffId, data) => {
+  assertNotInPast(data.appointment_date, data.scheduled_start_time);
+
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -428,6 +432,10 @@ export const updateAppointmentService = async (appointmentId, data) => {
       throw new Error("Only today's appointments can be updated.");
     }
 
+    const effectiveStartTime =
+      data.scheduled_start_time ?? existing.scheduled_start_time;
+    assertNotInPast(existing.appointment_date, effectiveStartTime);
+
     // Only editable statuses
     if (
       existing.status !== APPOINTMENT_STATUS.Booked &&
@@ -584,6 +592,10 @@ export const approveAppointmentService = async (appointmentId, data) => {
       throw new Error("Only REQUESTED appointments can be approved.");
     }
 
+    const scheduledStartTime =
+      data.scheduled_start_time ?? existing.scheduled_start_time;
+    assertNotInPast(existing.appointment_date, scheduledStartTime);
+
     const doctorId = data.doctor_id || existing.doctor_id;
     const clinicId = data.clinic_id || existing.clinic_id;
     const departmentId = data.department_id || existing.department_id;
@@ -608,8 +620,6 @@ export const approveAppointmentService = async (appointmentId, data) => {
       throw new Error("Invalid appointment type");
     }
 
-    const scheduledStartTime =
-      data.scheduled_start_time ?? existing.scheduled_start_time;
     if (scheduledStartTime != null) {
       await checkDoctorAvailability(client, {
         doctor_id: doctorId,
@@ -698,9 +708,7 @@ export const createFollowUpAppointmentService = async (
       );
     }
 
-    if (new Date(dto.appointment_date) <= new Date()) {
-      throw new Error("Follow-up appointment must be on a future date");
-    }
+    assertNotInPast(dto.appointment_date, dto.scheduled_start_time);
 
     const doctorId = dto.doctor_id || previous.doctor_id;
 
@@ -769,6 +777,8 @@ export const rescheduleAppointmentService = async (
       throw new Error("Appointment cannot be rescheduled");
     }
 
+    assertNotInPast(data.appointment_date, data.scheduled_start_time);
+
     const estimatedDuration =
       APPOINTMENT_DURATION[
         data.appointment_type || appointment.appointment_type
@@ -826,9 +836,7 @@ export const patientBookAppointmentService = async (patientId, dto) => {
     if (!dto.notes) throw new Error("Missing notes fields");
     if (!dto.preferred_date) throw new Error("Missing date fields");
 
-    if (new Date(dto.preferred_date) < new Date().setHours(0, 0, 0, 0)) {
-      throw new Error("Cannot book past dates");
-    }
+    assertNotInPast(dto.preferred_date, dto.preferred_time);
 
     const existing = await checkDuplicatePatientRequestQuery(
       client,
@@ -961,6 +969,7 @@ export const getDoctorAppointmentsByDateService = async ({
   if (!doctor_id || !date) {
     throw new Error("doctor_id and date are required");
   }
+  assertDateNotInPast(date);
   const clinicId = clinic_id ? parseInt(clinic_id, 10) : null;
   return getDoctorAppointmentsByDateQuery(
     parseInt(doctor_id, 10),
