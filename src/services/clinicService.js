@@ -16,8 +16,15 @@ export const createClinicService = async (data) => {
   return await createClinicQuery(data);
 };
 
+function attachAddressToName(clinic) {
+  const name = clinic.name || "";
+  const address = clinic.address?.trim() || "";
+  return { ...clinic, name: address ? `${name}- ${address}` : name };
+}
+
 export const getAllClinicService = async () => {
-  return await getAllClinicQuery();
+  const rows = await getAllClinicQuery();
+  return rows.map(attachAddressToName);
 };
 
 export const getClinicByStaffService = async (userId) => {
@@ -25,7 +32,8 @@ export const getClinicByStaffService = async (userId) => {
     throw new Error("user id is required.");
   }
 
-  return await getClinicByStaffQuery(userId);
+  const rows = await getClinicByStaffQuery(userId);
+  return rows.map(attachAddressToName);
 };
 
 export const updateClinicService = async (clinicId, clinicDto) => {

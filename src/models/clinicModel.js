@@ -32,11 +32,12 @@ export const getClinicByStaffQuery = async (userId) => {
     `
       SELECT 
       cs.clinic_id AS id,
-      c.name
+      c.name,
+      c.address
       FROM clinic_staff cs
       LEFT JOIN clinics c ON c.id = cs.clinic_id
       WHERE cs.user_id = $1
-      GROUP BY cs.clinic_id, c.name
+      GROUP BY cs.clinic_id, c.name, c.address
     `,
     [userId]
   );
