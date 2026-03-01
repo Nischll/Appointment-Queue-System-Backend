@@ -642,13 +642,18 @@ export const approveAppointmentService = async (appointmentId, data) => {
       throw new Error("Only REQUESTED appointments can be approved.");
     }
 
+    const effectiveAppointmentDate =
+      data.appointment_date != null && data.appointment_date !== ""
+        ? String(data.appointment_date).trim().slice(0, 10)
+        : existing.appointment_date;
+
     let scheduledStartTime =
       data.scheduled_start_time ?? existing.scheduled_start_time;
     if (scheduledStartTime != null && scheduledStartTime !== "") {
       scheduledStartTime = to24HourTime(scheduledStartTime);
       data.scheduled_start_time = scheduledStartTime;
     }
-    assertNotInPast(existing.appointment_date, scheduledStartTime);
+    assertNotInPast(effectiveAppointmentDate, scheduledStartTime);
 
     const doctorId = data.doctor_id || existing.doctor_id;
     const clinicId = data.clinic_id || existing.clinic_id;
@@ -662,7 +667,7 @@ export const approveAppointmentService = async (appointmentId, data) => {
     const queueNumber = await getNextQueueNumberQuery(
       client,
       doctorId,
-      existing.appointment_date,
+      effectiveAppointmentDate,
       clinicId,
       departmentId,
       appointment_type,
@@ -679,7 +684,7 @@ export const approveAppointmentService = async (appointmentId, data) => {
         doctor_id: doctorId,
         clinic_id: clinicId,
         department_id: departmentId,
-        appointment_date: existing.appointment_date,
+        appointment_date: effectiveAppointmentDate,
         scheduled_start_time: scheduledStartTime,
         estimated_duration: estimatedDuration,
         exclude_appointment_id: appointmentId,
@@ -688,6 +693,7 @@ export const approveAppointmentService = async (appointmentId, data) => {
 
     const approved = await approveAppointmentQuery(client, appointmentId, {
       ...data,
+      appointment_date: effectiveAppointmentDate,
       queue_number: queueNumber,
       status: APPOINTMENT_STATUS.Booked,
       estimated_duration: estimatedDuration,
@@ -698,7 +704,7 @@ export const approveAppointmentService = async (appointmentId, data) => {
       doctorId,
       clinicId,
       departmentId,
-      existing.appointment_date,
+      effectiveAppointmentDate,
     );
 
     await client.query("COMMIT");
@@ -920,11 +926,9 @@ export const patientBookAppointmentService = async (patientId, dto) => {
     if (!dto.notes) throw new Error("Missing notes fields");
     if (!dto.preferred_date) throw new Error("Missing date fields");
 
-    if (dto.preferred_time != null && dto.preferred_time !== "") {
-      dto.preferred_time = to24HourTime(dto.preferred_time);
-    }
-    assertNotInPast(dto.preferred_date, dto.preferred_time);
+    assertDateNotInPast(dto.preferred_date);
 
+    // preferred_time is an enum (MORNING, AFTERNOON, EVENING, ANY), not a clock time — do not convert with to24HourTime
     const existing = await checkDuplicatePatientRequestQuery(
       client,
       patientId,

@@ -253,6 +253,7 @@ export const approveAppointment = async (req, res) => {
       clinic_id: req.body.clinic_id,
       department_id: req.body.department_id,
       appointment_type: req.body.appointment_type,
+      appointment_date: req.body.appointment_date,
       scheduled_start_time: req.body.scheduled_start_time,
       notes: req.body.notes,
       approved_by: approvedBy,

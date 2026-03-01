@@ -47,21 +47,28 @@ export function to24HourTime(timeStr) {
 
 /**
  * Validates that an appointment slot (date + optional time) is not in the past.
- * Used to block booking, update, approve, and reschedule for past date/time.
+ * Uses date-first logic: if date is in the future, valid; if date is today, then check time.
+ * Avoids timezone issues from comparing a single date+time instant.
  *
  * @param {string|Date} appointmentDate - Date string YYYY-MM-DD or Date object
- * @param {string|null|undefined} scheduledStartTime - Time string (e.g. "11:00 AM", "09:30", "14:00:00"), or null/undefined for date-only
+ * @param {string|null|undefined} scheduledStartTime - Time string (e.g. "11:00 AM", "09:30"), or null/undefined for date-only
  * @returns {boolean} - true if the slot is in the past (invalid)
  */
 export function isAppointmentInPast(appointmentDate, scheduledStartTime) {
   const dateStr = toDateString(appointmentDate);
   if (!dateStr) return true;
 
+  const now = new Date();
+  const todayStr =
+    `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+  if (dateStr < todayStr) return true;
+  if (dateStr > todayStr) return false;
+
   const timeStr =
     scheduledStartTime != null && scheduledStartTime !== ""
       ? String(scheduledStartTime).trim()
       : "00:00:00";
-
   const normalizedTime = to24HourTime(timeStr);
 
   let appointmentMoment;
@@ -72,7 +79,6 @@ export function isAppointmentInPast(appointmentDate, scheduledStartTime) {
     return true;
   }
 
-  const now = new Date();
   return appointmentMoment.getTime() < now.getTime();
 }
 
