@@ -5,6 +5,7 @@ import { pathToFileURL } from "url";
 import seedModules from "../seeds/modulesSeeder.js";
 import seedRoles from "../seeds/rolesSeeder.js";
 import seedSuperAdmin from "../seeds/superAdminSeeder.js";
+import runSimulation from "../seeds/simulationSeeder.js";
 
 const runSqlFile = async (filePath) => {
   try {
@@ -77,4 +78,5 @@ export const initDb = async () => {
   await seedModules();
   await seedRoles();
   await seedSuperAdmin();
+  await runSimulation();
 };
