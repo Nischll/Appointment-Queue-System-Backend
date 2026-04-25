@@ -78,5 +78,5 @@ export const initDb = async () => {
   await seedModules();
   await seedRoles();
   await seedSuperAdmin();
-  await runSimulation();
+  // await runSimulation();
 };
