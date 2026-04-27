@@ -2,23 +2,48 @@ import pool from "../config/db.js";
 import APPOINTMENT_STATUS from "../enums/appointmentStatus.enum.js";
 import APPOINTMENT_TYPE from "../enums/appointmentType.enum.js";
 
+// export const checkDuplicateAppointmentQuery = async (client, data) => {
+//   const { patient_id, clinic_id, department_id, doctor_id, appointment_date } =
+//     data;
+
+//   const result = await client.query(
+//     `
+//     SELECT id
+//     FROM appointments
+//     WHERE patient_id = $1
+//       AND clinic_id = $2
+//       AND department_id = $3
+//       AND doctor_id = $4
+//       AND appointment_date = $5
+//       AND status NOT IN ('CANCELLED', 'NO_SHOW')
+//     LIMIT 1
+//     `,
+//     [patient_id, clinic_id, department_id, doctor_id, appointment_date],
+//   );
+
+//   return result.rows[0];
+// };
+
 export const checkDuplicateAppointmentQuery = async (client, data) => {
-  const { patient_id, clinic_id, department_id, doctor_id, appointment_date } =
-    data;
+  const { patient_id, appointment_date } = data;
 
   const result = await client.query(
     `
-    SELECT id
-    FROM appointments
-    WHERE patient_id = $1
-      AND clinic_id = $2
-      AND department_id = $3
-      AND doctor_id = $4
-      AND appointment_date = $5
-      AND status NOT IN ('CANCELLED', 'NO_SHOW')
+    SELECT 
+      a.id,
+      d.name AS doctor_name,
+      dep.name AS department_name,
+      c.name AS clinic_name
+    FROM appointments a
+    JOIN doctors d ON a.doctor_id = d.id
+    JOIN departments dep ON a.department_id = dep.id
+    JOIN clinics c ON a.clinic_id = c.id
+    WHERE a.patient_id = $1
+      AND a.appointment_date = $2
+      AND a.status NOT IN ('CANCELLED', 'NO_SHOW', 'REJECTED')
     LIMIT 1
     `,
-    [patient_id, clinic_id, department_id, doctor_id, appointment_date],
+    [patient_id, appointment_date],
   );
 
   return result.rows[0];
@@ -968,27 +993,21 @@ export const rescheduleAppointmentQuery = async (
 export const checkDuplicatePatientRequestQuery = async (
   client,
   patientId,
-  clinicId,
   preferredDate,
 ) => {
   const result = await client.query(
     `
-    SELECT id
-    FROM appointments
-    WHERE patient_id = $1
-      AND clinic_id = $2
-      AND appointment_date = $3
-      AND status IN ($4, $5, $6)
+    SELECT 
+      a.id,
+      c.name AS clinic_name
+    FROM appointments a
+    JOIN clinics c ON a.clinic_id = c.id
+    WHERE a.patient_id = $1
+      AND a.appointment_date = $2
+      AND a.status NOT IN ('CANCELLED', 'NO_SHOW', 'REJECTED')
     LIMIT 1
     `,
-    [
-      patientId,
-      clinicId,
-      preferredDate,
-      APPOINTMENT_STATUS.Requested,
-      APPOINTMENT_STATUS.Booked,
-      APPOINTMENT_STATUS.Checked_In,
-    ],
+    [patientId, preferredDate],
   );
 
   return result.rows[0];

@@ -87,12 +87,22 @@ export const staffBookAppointmentService = async (staffId, data) => {
   try {
     await client.query("BEGIN");
 
+    // const existing = await checkDuplicateAppointmentQuery(client, data);
+
+    // if (existing) {
+    //   throw new Error(
+    //     "Patient already has an active appointment with this doctor on this date",
+    //   );
+    // }
+
     const existing = await checkDuplicateAppointmentQuery(client, data);
 
     if (existing) {
-      throw new Error(
-        "Patient already has an active appointment with this doctor on this date",
+      const err = new Error(
+        `Patient already has an active appointment on this date with Dr. ${existing.doctor_name} at ${existing.department_name}, ${existing.clinic_name}.`,
       );
+      err.statusCode = 409;
+      throw err;
     }
 
     const queueNumber = await assignQueueNumberQuery(client, data);
@@ -932,14 +942,15 @@ export const patientBookAppointmentService = async (patientId, dto) => {
     const existing = await checkDuplicatePatientRequestQuery(
       client,
       patientId,
-      dto.clinic_id,
       dto.preferred_date,
     );
 
     if (existing) {
-      throw new Error(
-        "You already have a pending or active appointment for this clinic on this date.",
+      const err = new Error(
+        `You already have a pending appointment request on this date at ${existing.clinic_name}. Please wait for it to be approved or cancel it before booking again.`,
       );
+      err.statusCode = 409;
+      throw err;
     }
 
     const result = await addPatientAppoinmentQuery(client, patientId, dto);
