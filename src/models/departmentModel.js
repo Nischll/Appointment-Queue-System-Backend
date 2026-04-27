@@ -9,7 +9,7 @@ export const createDepartmentQuery = async (data) => {
       VALUES ($1, $2)
       RETURNING *
     `,
-    [clinic_id, name]
+    [clinic_id, name],
   );
 
   return result.rows[0];
@@ -24,7 +24,7 @@ export const getDepartmentByClinicQuery = async (clinicId) => {
         AND status = TRUE
       ORDER BY name ASC
     `,
-    [clinicId]
+    [clinicId],
   );
   return result.rows;
 };
@@ -38,7 +38,7 @@ export const findDepartmentByNameQuery = async (clinicId, name) => {
       AND LOWER(name) = LOWER($2)
       AND status = TRUE
     `,
-    [clinicId, name]
+    [clinicId, name],
   );
 
   return result.rows[0] || null;
@@ -56,10 +56,39 @@ export const updateDepartmentQuery = async (departmentId, data) => {
         AND status = TRUE
       RETURNING *
     `,
-    [name, clinic_id, departmentId]
+    [name, clinic_id, departmentId],
   );
 
   return result.rows[0] || null;
+};
+
+export const checkDepartmentActiveDoctorsQuery = async (departmentId) => {
+  const result = await pool.query(
+    `
+    SELECT COUNT(*) AS count
+    FROM doctor_departments
+    WHERE department_id = $1
+      AND status = TRUE
+    `,
+    [departmentId],
+  );
+
+  return { count: parseInt(result.rows[0].count, 10) };
+};
+
+export const checkDepartmentActiveAppointmentsQuery = async (departmentId) => {
+  const result = await pool.query(
+    `
+    SELECT COUNT(*) AS count
+    FROM appointments
+    WHERE department_id = $1
+      AND status IN ('BOOKED', 'REQUESTED')
+      AND appointment_date >= CURRENT_DATE
+    `,
+    [departmentId],
+  );
+
+  return { count: parseInt(result.rows[0].count, 10) };
 };
 
 export const deleteDepartmentQuery = async (departmentId) => {
@@ -71,7 +100,7 @@ export const deleteDepartmentQuery = async (departmentId) => {
         AND status = TRUE
       RETURNING *
     `,
-    [departmentId]
+    [departmentId],
   );
 
   return result.rows[0] || null;

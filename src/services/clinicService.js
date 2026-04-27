@@ -1,4 +1,6 @@
 import {
+  checkClinicActiveDepartmentsQuery,
+  checkClinicActiveDoctorsQuery,
   checkClinicExistQuery,
   createClinicQuery,
   deleteClinicQuery,
@@ -47,10 +49,31 @@ export const updateClinicService = async (clinicId, clinicDto) => {
 };
 
 export const deleteClinicService = async (clinicId) => {
-  const deletedClinic = await deleteClinicQuery(clinicId);
+  if (!clinicId) {
+    throw new Error("Clinic id is required.");
+  }
 
+  const activeDepartments = await checkClinicActiveDepartmentsQuery(clinicId);
+  if (activeDepartments.count > 0) {
+    const error = new Error(
+      `Cannot remove clinic. It has ${activeDepartments.count} active department(s). Please remove all departments first.`,
+    );
+    error.code = "DEPARTMENT_CONFLICT";
+    throw error;
+  }
+
+  const activeDoctors = await checkClinicActiveDoctorsQuery(clinicId);
+  if (activeDoctors.count > 0) {
+    const error = new Error(
+      `Cannot remove clinic. It has ${activeDoctors.count} active doctor(s) assigned. Please remove all doctors first.`,
+    );
+    error.code = "DOCTOR_CONFLICT";
+    throw error;
+  }
+
+  const deletedClinic = await deleteClinicQuery(clinicId);
   if (!deletedClinic) {
-    throw new Error("Clinic not foound");
+    throw new Error("Clinic not found.");
   }
 
   return deletedClinic;

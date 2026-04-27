@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import APPOINTMENT_STATUS from "../enums/appointmentStatus.enum.js";
 
 export const findDoctorByEmail = async (email) => {
   const result = await pool.query(
@@ -103,6 +104,32 @@ export const updateDoctorQuery = async (doctorId, data) => {
   );
 
   return result.rows[0] || null;
+};
+
+export const checkDoctorActiveAppointmentsQuery = async (
+  doctorId,
+  departmentId,
+) => {
+  const result = await pool.query(
+    `
+    SELECT COUNT(*) AS count
+    FROM appointments
+    WHERE doctor_id = $1
+      AND department_id = $2
+      AND status IN ($3, $4, $5, $6)
+      AND appointment_date >= CURRENT_DATE
+    `,
+    [
+      doctorId,
+      departmentId,
+      APPOINTMENT_STATUS.Booked,
+      APPOINTMENT_STATUS.Requested,
+      APPOINTMENT_STATUS.Checked_In,
+      APPOINTMENT_STATUS.In_progress,
+    ],
+  );
+
+  return { count: parseInt(result.rows[0].count, 10) };
 };
 
 export const removeDoctorFromDepartmentQuery = async (

@@ -81,6 +81,11 @@ export const deleteDoctor = async (req, res) => {
     );
   } catch (error) {
     console.error("error removing doctor", error);
+
+    if (error.code === "APPOINTMENT_CONFLICT") {
+      return sendResponse(res, 409, error.message, null);
+    }
+
     return sendResponse(
       res,
       error.message.includes("not found") ? 404 : 500,

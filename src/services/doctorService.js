@@ -2,6 +2,7 @@ import pool from "../config/db.js";
 import { DoctorDto } from "../dto/doctorDto.js";
 import {
   addDoctorToDepartmentsQuery,
+  checkDoctorActiveAppointmentsQuery,
   createDoctorQuery,
   findDoctorByEmail,
   getDoctorsByDepartmentQuery,
@@ -75,6 +76,19 @@ export const removeDoctorFromDepartmentService = async (
 ) => {
   if (!doctorId || !departmentId) {
     throw new Error("Doctor and department id are required.");
+  }
+
+  const conflictingAppointments = await checkDoctorActiveAppointmentsQuery(
+    doctorId,
+    departmentId,
+  );
+
+  if (conflictingAppointments.count > 0) {
+    const error = new Error(  
+      `Cannot remove doctor. They have ${conflictingAppointments.count} active or upcoming appointment(s) in this department.`,
+    );
+    error.code = "APPOINTMENT_CONFLICT";
+    throw error;
   }
 
   const removed = await removeDoctorFromDepartmentQuery(doctorId, departmentId);

@@ -1,4 +1,6 @@
 import {
+  checkDepartmentActiveAppointmentsQuery,
+  checkDepartmentActiveDoctorsQuery,
   createDepartmentQuery,
   deleteDepartmentQuery,
   findDepartmentByNameQuery,
@@ -58,8 +60,26 @@ export const deleteDepartmentService = async (departmentId) => {
     throw new Error("Department is required.");
   }
 
-  const deleted = await deleteDepartmentQuery(departmentId);
+  const activeDoctors = await checkDepartmentActiveDoctorsQuery(departmentId);
+  if (activeDoctors.count > 0) {
+    const error = new Error(
+      `Cannot remove department. It has ${activeDoctors.count} active doctor(s) assigned. Please remove all doctors first.`,
+    );
+    error.code = "DOCTOR_CONFLICT";
+    throw error;
+  }
 
+  const activeAppointments =
+    await checkDepartmentActiveAppointmentsQuery(departmentId);
+  if (activeAppointments.count > 0) {
+    const error = new Error(
+      `Cannot remove department. It has ${activeAppointments.count} active or upcoming appointment(s). Please resolve all appointments first.`,
+    );
+    error.code = "APPOINTMENT_CONFLICT";
+    throw error;
+  }
+
+  const deleted = await deleteDepartmentQuery(departmentId);
   if (!deleted) {
     throw new Error("Department not found.");
   }

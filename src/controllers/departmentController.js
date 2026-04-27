@@ -18,7 +18,7 @@ export const createDepartment = async (req, res) => {
       res,
       error.message.includes("exists") ? 400 : 500,
       error.message,
-      null
+      null,
     );
   }
 };
@@ -34,7 +34,7 @@ export const getDepartments = async (req, res) => {
       res,
       error.message.includes("exists") ? 400 : 500,
       error.message,
-      null
+      null,
     );
   }
 };
@@ -51,7 +51,7 @@ export const updateDepartment = async (req, res) => {
       res,
       error.message.includes("belongs") ? 400 : 500,
       error.message,
-      null
+      null,
     );
   }
 };
@@ -60,14 +60,21 @@ export const deleteDepartment = async (req, res) => {
   try {
     const departmentId = req.params.id;
     const data = await deleteDepartmentService(Number(departmentId));
+
     return sendResponse(res, 200, "Department removed successfully.", data.id);
   } catch (error) {
-    console.error("error removing doctor", error);
+    console.error("error removing department", error);
+
+    const conflictCodes = ["DOCTOR_CONFLICT", "APPOINTMENT_CONFLICT"];
+    if (conflictCodes.includes(error.code)) {
+      return sendResponse(res, 409, error.message, null);
+    }
+
     return sendResponse(
       res,
       error.message.includes("not found") ? 404 : 500,
       error.message,
-      null
+      null,
     );
   }
 };

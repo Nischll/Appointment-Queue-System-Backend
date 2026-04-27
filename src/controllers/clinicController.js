@@ -67,9 +67,20 @@ export const deleteClinic = async (req, res) => {
     const clinicId = req.params.id;
     const data = await deleteClinicService(clinicId);
 
-    return sendResponse(res, 200, "clinic removed successfully.", data);
+    return sendResponse(res, 200, "Clinic removed successfully.", data);
   } catch (error) {
     console.error("error deleting clinic.", error);
-    return sendResponse(res, 500, error.message, null);
+
+    const conflictCodes = ["DEPARTMENT_CONFLICT", "DOCTOR_CONFLICT"];
+    if (conflictCodes.includes(error.code)) {
+      return sendResponse(res, 409, error.message, null);
+    }
+
+    return sendResponse(
+      res,
+      error.message.includes("not found") ? 404 : 500,
+      error.message,
+      null,
+    );
   }
 };
